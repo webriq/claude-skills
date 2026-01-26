@@ -2,58 +2,66 @@
 
 > A structured skill-based development pipeline for consistent, high-quality feature delivery.
 
-## Installation
+## Installation (Plugin Marketplace)
 
-Clone or copy the skill folders to your `.claude/skills/` directory:
+### Option 1: Install via Plugin Marketplace (Recommended)
+
+Add this marketplace to Claude Code, then install the plugins you need:
 
 ```bash
-# Option 1: Clone the entire repo and copy
-git clone https://github.com/your-username/claude-skills.git
-cp -r claude-skills/* ~/.claude/skills/
+# Step 1: Add the marketplace (one time)
+/plugin marketplace add your-username/claude-skills
 
-# Option 2: Clone directly into skills folder
-cd ~/.claude/skills
-git clone https://github.com/your-username/claude-skills.git .
-
-# Option 3: Add as submodule (if your project uses git)
-cd your-project
-git submodule add https://github.com/your-username/claude-skills.git .claude/skills
+# Step 2: Install plugins you want
+/plugin install workflow@your-username/claude-skills
+/plugin install react-best-practices@your-username/claude-skills
+/plugin install postgres-best-practices@your-username/claude-skills
 ```
 
-### Folder Structure After Installation
+### Option 2: Install All Plugins at Once
 
+```bash
+# Add marketplace and install everything
+/plugin marketplace add your-username/claude-skills
+/plugin install workflow react-best-practices postgres-best-practices@your-username/claude-skills
 ```
-~/.claude/skills/
-├── plan/
-│   └── SKILL.md
-├── implement/
-│   └── SKILL.md
-├── test/
-│   └── SKILL.md
-├── document/
-│   └── SKILL.md
-├── ship/
-│   └── SKILL.md
-├── release/
-│   └── SKILL.md
-├── react-best-practices/
-│   ├── SKILL.md
-│   ├── AGENTS.md
-│   └── rules/
-└── postgres-best-practices/
-    └── SKILL.md
+
+### Available Plugins
+
+| Plugin | Skills Included | Description |
+|--------|-----------------|-------------|
+| `workflow` | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` | Complete development pipeline |
+| `react-best-practices` | `/react-best-practices` | React/Next.js optimization patterns |
+| `postgres-best-practices` | `/postgres-best-practices` | PostgreSQL/Supabase best practices |
+
+### Skill Names After Installation
+
+Once installed via marketplace, skills are namespaced:
+
+```bash
+# Workflow skills
+/workflow:plan
+/workflow:implement
+/workflow:test
+/workflow:document
+/workflow:ship
+/workflow:release
+
+# Best practices skills
+/react-best-practices:react-best-practices
+/postgres-best-practices:postgres-best-practices
 ```
 
 ### Project Setup (Required)
 
-The skills expect these folders to exist in your project. Create them before using:
+After installing plugins, create the required folders in your project:
 
 ```bash
 # Create required docs folders in your project root
 mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs
 
-# Copy the TASKS.md template to your project root
-cp ~/.claude/skills/TASKS.md ./TASKS.md
+# Download TASKS.md template
+curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/main/TASKS.md
 ```
 
 **Folder purposes:**
@@ -65,6 +73,22 @@ cp ~/.claude/skills/TASKS.md ./TASKS.md
 | `docs/guides/` | User guides created by `/document` |
 | `docs/changelogs/` | Changelog created by `/release` |
 | `TASKS.md` | Task tracker (project root) |
+
+---
+
+## Alternative: Manual Installation
+
+If you prefer not to use the marketplace, copy skills directly:
+
+```bash
+# Clone and copy to .claude/skills/
+git clone https://github.com/your-username/claude-skills.git
+cp -r claude-skills/plugins/workflow/skills/* ~/.claude/skills/
+cp -r claude-skills/plugins/react-best-practices/skills/* ~/.claude/skills/
+cp -r claude-skills/plugins/postgres-best-practices/skills/* ~/.claude/skills/
+```
+
+With manual installation, skills use short names: `/plan`, `/implement`, etc.
 
 ## Quick Start
 

@@ -1,18 +1,24 @@
 # Development Workflow - Quick Reference
 
-## Installation
+## Installation (Plugin Marketplace)
 
 ```bash
-# 1. Copy skills to your .claude/skills/ directory
-git clone https://github.com/your-username/claude-skills.git
-cp -r claude-skills/* ~/.claude/skills/
+# 1. Add marketplace (one time)
+/plugin marketplace add your-username/claude-skills
 
-# 2. Create required docs folders in your project
+# 2. Install plugins
+/plugin install workflow@your-username/claude-skills
+/plugin install react-best-practices@your-username/claude-skills
+/plugin install postgres-best-practices@your-username/claude-skills
+
+# 3. Create docs folders in your project
 mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs
 
-# 3. Copy TASKS.md template to your project root
-cp ~/.claude/skills/TASKS.md ./TASKS.md
+# 4. Download TASKS.md template
+curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/main/TASKS.md
 ```
+
+**Skill names after install:** `/workflow:plan`, `/workflow:implement`, etc.
 
 ---
 

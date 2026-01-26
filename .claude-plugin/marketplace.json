@@ -1,0 +1,25 @@
+{
+  "name": "claude-skills",
+  "description": "Development workflow skills and best practices for Claude Code",
+  "owner": {
+    "name": "Your Name",
+    "url": "https://github.com/your-username"
+  },
+  "plugins": [
+    {
+      "name": "workflow",
+      "description": "Complete development workflow: plan, implement, test, document, ship, release",
+      "source": "./plugins/workflow"
+    },
+    {
+      "name": "react-best-practices",
+      "description": "React and Next.js performance optimization patterns",
+      "source": "./plugins/react-best-practices"
+    },
+    {
+      "name": "postgres-best-practices",
+      "description": "PostgreSQL and Supabase database best practices",
+      "source": "./plugins/postgres-best-practices"
+    }
+  ]
+}

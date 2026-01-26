@@ -1,0 +1,13 @@
+{
+  "name": "workflow",
+  "version": "1.0.0",
+  "description": "Complete development workflow pipeline: plan → implement → test → document → ship → release",
+  "skills": [
+    "skills/plan",
+    "skills/implement",
+    "skills/test",
+    "skills/document",
+    "skills/ship",
+    "skills/release"
+  ]
+}

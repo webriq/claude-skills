@@ -1,0 +1,8 @@
+{
+  "name": "react-best-practices",
+  "version": "1.0.0",
+  "description": "React and Next.js performance optimization guidelines from Vercel Engineering. 45 rules across 8 categories.",
+  "skills": [
+    "skills/react-best-practices"
+  ]
+}

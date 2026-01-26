@@ -1,0 +1,8 @@
+{
+  "name": "postgres-best-practices",
+  "version": "1.0.0",
+  "description": "PostgreSQL and Supabase best practices for queries, RLS policies, schema design, and performance.",
+  "skills": [
+    "skills/postgres-best-practices"
+  ]
+}
