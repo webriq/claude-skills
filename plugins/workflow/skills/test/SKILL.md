@@ -748,5 +748,5 @@ These plugins enhance debugging but must be installed separately:
 
 | Plugin | Install From | When Useful |
 |--------|--------------|-------------|
-| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js debugging |
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js debugging |
 | `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database-related test issues |

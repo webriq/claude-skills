@@ -63,7 +63,7 @@ If you have the recommended plugins installed, invoke them for best practices:
 
 For React/Next.js code:
 ```
-/react-best-practices
+/vercel-react-best-practices
 ```
 
 For database queries, RLS, schema:
@@ -109,7 +109,7 @@ The task document is your spec. Follow it step by step:
 
 | Situation | Skill (Optional) |
 |-----------|------------------|
-| React/Next.js code | `/react-best-practices` |
+| React/Next.js code | `/vercel-react-best-practices` |
 | Database work | `/supabase-postgres-best-practices` |
 | Need clarification | Ask user |
 
@@ -268,7 +268,7 @@ These plugins enhance the workflow but must be installed separately:
 
 | Plugin | Install From | When Useful |
 |--------|--------------|-------------|
-| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js projects |
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js projects |
 | `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Supabase/PostgreSQL projects |
 
-If installed, invoke with `/react-best-practices` or `/supabase-postgres-best-practices` during implementation.
+If installed, invoke with `/vercel-react-best-practices` or `/supabase-postgres-best-practices` during implementation.

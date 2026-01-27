@@ -2,53 +2,72 @@
 
 > A structured skill-based development pipeline for consistent, high-quality feature delivery.
 
-## Installation (Plugin Marketplace)
+## Installation
 
-### Option 1: Install via Plugin Marketplace (Recommended)
+### Step 1: Install Workflow Plugin
 
-Add this marketplace to Claude Code, then install the workflow plugin:
+Add the marketplace to Claude Code and install the workflow plugin:
 
 ```bash
-# Step 1: Add the marketplace (one time)
-/plugin marketplace add your-username/claude-skills
+# In Claude Code, run:
+/plugin
 
-# Step 2: Install the workflow plugin
-/plugin install workflow@your-username/claude-skills
+# Then select:
+# 1. "Marketplaces" tab
+# 2. "Add Marketplace"
+# 3. Enter: eljun/claude-skills
+# 4. Go to "Plugins" tab
+# 5. Enable "workflow"
 ```
 
-### Available Plugins
+This installs the core workflow skills:
 
-| Plugin | Skills Included | Description |
-|--------|-----------------|-------------|
-| `workflow` | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` | Complete development pipeline |
+| Skill | Purpose |
+|-------|---------|
+| `/plan` | Plan features and create task documents |
+| `/implement` | Implement tasks step by step |
+| `/test` | Run E2E tests via Playwright |
+| `/document` | Generate feature docs and guides |
+| `/ship` | Create PRs and prepare deployment |
+| `/release` | Create versioned releases with changelogs |
 
-### Skill Names After Installation
+### Step 2: Install Companion Skills (Recommended)
 
-Once installed via marketplace, skills are namespaced:
+The workflow skills reference these specialized skills for React/Next.js and Supabase/PostgreSQL projects. They are **optional but recommended**.
+
+Run these commands in your **project directory**:
 
 ```bash
-# Workflow skills
-/workflow:plan
-/workflow:implement
-/workflow:test
-/workflow:document
-/workflow:ship
-/workflow:release
+# React/Next.js best practices (from Vercel)
+npx skills add vercel-labs/agent-skills
+
+# Supabase/PostgreSQL best practices (from Supabase)
+npx skills add supabase/agent-skills
 ```
 
-### Project Setup (Required)
+For each command, follow the prompts:
 
-After installing plugins, create the required folders in your project:
+1. **Install to** → Select specific agents
+2. **Select skills** → Choose the skills you want (e.g., `vercel-react-best-practices`, `supabase-postgres-best-practices`)
+3. **Select agents to install to** → Claude Code
+4. **Installation scope** → Project
+5. **Installation method** → Symlink (Recommended)
+
+| Skill | Source | Purpose |
+|-------|--------|---------|
+| `/vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js performance optimization |
+| `/supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database queries, RLS, schema design |
+
+When installed, the workflow skills (`/plan`, `/implement`, etc.) will automatically reference these during relevant tasks.
+
+### Step 3: Project Setup
+
+Create the required folders in your project:
 
 ```bash
-# Create required docs folders in your project root
 mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs
-
-# Download TASKS.md template
-curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/main/TASKS.md
 ```
 
-**Folder purposes:**
 | Folder | Purpose |
 |--------|---------|
 | `docs/task/` | Task documents created by `/plan` |
@@ -56,43 +75,7 @@ curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/m
 | `docs/features/` | Feature documentation created by `/document` |
 | `docs/guides/` | User guides created by `/document` |
 | `docs/changelogs/` | Changelog created by `/release` |
-| `TASKS.md` | Task tracker (project root) |
-
----
-
-## Recommended Plugins (Optional)
-
-For React/Next.js and Supabase/PostgreSQL projects, install these complementary plugins from their original sources:
-
-```bash
-# React/Next.js best practices (from Vercel)
-claude plugins install https://github.com/vercel-labs/agent-skills
-
-# Supabase/PostgreSQL best practices (from Supabase)
-claude plugins install https://github.com/supabase/agent-skills
-```
-
-These plugins provide:
-| Plugin | Skill | Source |
-|--------|-------|--------|
-| `react-best-practices` | `/react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
-| `supabase-postgres-best-practices` | `/supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
-
-The workflow skills will reference these if installed, but they are not required.
-
----
-
-## Alternative: Manual Installation
-
-If you prefer not to use the marketplace, copy skills directly:
-
-```bash
-# Clone and copy to .claude/skills/
-git clone https://github.com/your-username/claude-skills.git
-cp -r claude-skills/plugins/workflow/skills/* ~/.claude/skills/
-```
-
-With manual installation, skills use short names: `/plan`, `/implement`, etc.
+| `TASKS.md` | Task tracker (created automatically by `/plan`) |
 
 ## Quick Start
 
@@ -400,7 +383,7 @@ These skills provide domain-specific best practices and can be invoked during `/
 
 | Skill | Purpose | Install From |
 |-------|---------|--------------|
-| `/react-best-practices` | React/Next.js performance optimization | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
+| `/vercel-react-best-practices` | React/Next.js performance optimization | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
 | `/supabase-postgres-best-practices` | Database queries, RLS, schema design | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
 
 ---
@@ -412,7 +395,7 @@ These skills provide domain-specific best practices and can be invoked during `/
 | Type | Purpose | Examples |
 |------|---------|----------|
 | **Workflow** | Pipeline stages | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` |
-| **Specialized** | Domain best practices (external) | `/react-best-practices`, `/supabase-postgres-best-practices` |
+| **Specialized** | Domain best practices (external) | `/vercel-react-best-practices`, `/supabase-postgres-best-practices` |
 
 **Specialized skills** are invoked by workflow skills when relevant. To add a new one:
 

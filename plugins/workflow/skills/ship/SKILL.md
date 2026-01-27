@@ -375,5 +375,5 @@ These plugins help with code fixes but must be installed separately:
 
 | Plugin | Install From | When Useful |
 |--------|--------------|-------------|
-| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js code fixes |
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js code fixes |
 | `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database-related fixes |

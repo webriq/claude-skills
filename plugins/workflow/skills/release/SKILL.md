@@ -417,7 +417,7 @@ These plugins provide best practices reference but must be installed separately:
 
 | Plugin | Install From | When Useful |
 |--------|--------------|-------------|
-| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js optimization reference |
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js optimization reference |
 | `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database best practices reference |
 
 ---
