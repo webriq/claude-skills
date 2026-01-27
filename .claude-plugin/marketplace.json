@@ -14,12 +14,12 @@
     {
       "name": "react-best-practices",
       "description": "React and Next.js performance optimization patterns",
-      "source": "./plugins/react-best-practices"
+      "source": "github:vercel-labs/agent-skills/skills/react-best-practices"
     },
     {
-      "name": "postgres-best-practices",
+      "name": "supabase-postgres-best-practices",
       "description": "PostgreSQL and Supabase database best practices",
-      "source": "./plugins/postgres-best-practices"
+      "source": "github:supabase/agent-skills/skills/supabase-postgres-best-practices"
     }
   ]
 }
