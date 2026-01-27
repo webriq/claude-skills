@@ -410,8 +410,15 @@ If a task document doesn't have a `Type` field:
 | `/ship` | Before /release - gets items to "Ready to Ship" |
 | `/plan` | Add `Type` field when planning tasks |
 | `/document` | Ensure docs are updated before release |
-| `/react-best-practices` | React/Next.js optimization reference |
-| `/postgres-best-practices` | Database best practices reference |
+
+## Recommended Plugins (Optional)
+
+These plugins provide best practices reference but must be installed separately:
+
+| Plugin | Install From | When Useful |
+|--------|--------------|-------------|
+| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js optimization reference |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database best practices reference |
 
 ---
 

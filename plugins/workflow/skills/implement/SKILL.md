@@ -57,7 +57,9 @@ Understand:
 - File changes needed
 - Implementation steps
 
-### 2. Invoke Specialized Skills (As Needed)
+### 2. Invoke Specialized Skills (If Installed)
+
+If you have the recommended plugins installed, invoke them for best practices:
 
 For React/Next.js code:
 ```
@@ -66,8 +68,10 @@ For React/Next.js code:
 
 For database queries, RLS, schema:
 ```
-/postgres-best-practices
+/supabase-postgres-best-practices
 ```
+
+> **Note:** These plugins are optional. See "Recommended Plugins" section at the end.
 
 ### 3. Update TASKS.md
 
@@ -101,12 +105,12 @@ The task document is your spec. Follow it step by step:
 2. **Step 2** → Complete → Verify
 3. Continue until all steps done
 
-### Invoke Skills as Needed
+### Invoke Skills as Needed (If Installed)
 
-| Situation | Skill |
-|-----------|-------|
+| Situation | Skill (Optional) |
+|-----------|------------------|
 | React/Next.js code | `/react-best-practices` |
-| Database work | `/postgres-best-practices` |
+| Database work | `/supabase-postgres-best-practices` |
 | Need clarification | Ask user |
 
 ### Quality Standards
@@ -258,9 +262,13 @@ Use Task tool to spawn test agent with **model: haiku**:
 
 ---
 
-## Related Skills
+## Recommended Plugins (Optional)
 
-| Skill | When to Invoke |
-|-------|----------------|
-| `/react-best-practices` | React/Next.js code |
-| `/postgres-best-practices` | Database queries, RLS, schema |
+These plugins enhance the workflow but must be installed separately:
+
+| Plugin | Install From | When Useful |
+|--------|--------------|-------------|
+| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js projects |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Supabase/PostgreSQL projects |
+
+If installed, invoke with `/react-best-practices` or `/supabase-postgres-best-practices` during implementation.

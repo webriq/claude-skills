@@ -741,5 +741,12 @@ Include in report:
 |-------|-------------|
 | `/implement` | When tests fail, return to implement |
 | `/document` | After tests pass and user approves |
-| `/react-best-practices` | React/Next.js patterns during debugging |
-| `/postgres-best-practices` | Database-related test issues |
+
+## Recommended Plugins (Optional)
+
+These plugins enhance debugging but must be installed separately:
+
+| Plugin | Install From | When Useful |
+|--------|--------------|-------------|
+| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js debugging |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database-related test issues |

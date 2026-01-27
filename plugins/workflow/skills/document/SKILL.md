@@ -333,5 +333,12 @@ Use Task tool: `Task({ subagent_type: "general-purpose", model: "haiku", prompt:
 |-------|-------------|
 | `/implement` | If issues found during doc review |
 | `/ship` | After documentation complete |
-| `/react-best-practices` | Reference React patterns for docs |
-| `/postgres-best-practices` | Reference database patterns for docs |
+
+## Recommended Plugins (Optional)
+
+These plugins provide reference patterns but must be installed separately:
+
+| Plugin | Install From | When Useful |
+|--------|--------------|-------------|
+| `react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | Reference React patterns for docs |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Reference database patterns for docs |

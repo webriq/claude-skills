@@ -6,24 +6,14 @@
 
 ### Option 1: Install via Plugin Marketplace (Recommended)
 
-Add this marketplace to Claude Code, then install the plugins you need:
+Add this marketplace to Claude Code, then install the workflow plugin:
 
 ```bash
 # Step 1: Add the marketplace (one time)
 /plugin marketplace add your-username/claude-skills
 
-# Step 2: Install plugins you want
+# Step 2: Install the workflow plugin
 /plugin install workflow@your-username/claude-skills
-/plugin install react-best-practices@your-username/claude-skills
-/plugin install postgres-best-practices@your-username/claude-skills
-```
-
-### Option 2: Install All Plugins at Once
-
-```bash
-# Add marketplace and install everything
-/plugin marketplace add your-username/claude-skills
-/plugin install workflow react-best-practices postgres-best-practices@your-username/claude-skills
 ```
 
 ### Available Plugins
@@ -31,8 +21,6 @@ Add this marketplace to Claude Code, then install the plugins you need:
 | Plugin | Skills Included | Description |
 |--------|-----------------|-------------|
 | `workflow` | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` | Complete development pipeline |
-| `react-best-practices` | `/react-best-practices` | React/Next.js optimization patterns |
-| `postgres-best-practices` | `/postgres-best-practices` | PostgreSQL/Supabase best practices |
 
 ### Skill Names After Installation
 
@@ -46,10 +34,6 @@ Once installed via marketplace, skills are namespaced:
 /workflow:document
 /workflow:ship
 /workflow:release
-
-# Best practices skills
-/react-best-practices:react-best-practices
-/postgres-best-practices:postgres-best-practices
 ```
 
 ### Project Setup (Required)
@@ -76,6 +60,28 @@ curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/m
 
 ---
 
+## Recommended Plugins (Optional)
+
+For React/Next.js and Supabase/PostgreSQL projects, install these complementary plugins from their original sources:
+
+```bash
+# React/Next.js best practices (from Vercel)
+claude plugins install https://github.com/vercel-labs/agent-skills
+
+# Supabase/PostgreSQL best practices (from Supabase)
+claude plugins install https://github.com/supabase/agent-skills
+```
+
+These plugins provide:
+| Plugin | Skill | Source |
+|--------|-------|--------|
+| `react-best-practices` | `/react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
+| `supabase-postgres-best-practices` | `/supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
+
+The workflow skills will reference these if installed, but they are not required.
+
+---
+
 ## Alternative: Manual Installation
 
 If you prefer not to use the marketplace, copy skills directly:
@@ -84,8 +90,6 @@ If you prefer not to use the marketplace, copy skills directly:
 # Clone and copy to .claude/skills/
 git clone https://github.com/your-username/claude-skills.git
 cp -r claude-skills/plugins/workflow/skills/* ~/.claude/skills/
-cp -r claude-skills/plugins/react-best-practices/skills/* ~/.claude/skills/
-cp -r claude-skills/plugins/postgres-best-practices/skills/* ~/.claude/skills/
 ```
 
 With manual installation, skills use short names: `/plan`, `/implement`, etc.
@@ -390,14 +394,14 @@ PRs created via `/ship`. Awaiting merge.
 
 ---
 
-## Specialized Skills
+## Specialized Skills (External)
 
-These skills provide domain-specific best practices and can be invoked during `/plan` and `/implement`:
+These skills provide domain-specific best practices and can be invoked during `/plan` and `/implement`. Install them from their original sources:
 
-| Skill | Purpose | When to Use |
-|-------|---------|-------------|
-| `/react-best-practices` | React/Next.js performance optimization | React/Next.js code work |
-| `/postgres-best-practices` | Database queries, RLS, schema design | Database work, Supabase |
+| Skill | Purpose | Install From |
+|-------|---------|--------------|
+| `/react-best-practices` | React/Next.js performance optimization | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) |
+| `/supabase-postgres-best-practices` | Database queries, RLS, schema design | [supabase/agent-skills](https://github.com/supabase/agent-skills) |
 
 ---
 
@@ -408,7 +412,7 @@ These skills provide domain-specific best practices and can be invoked during `/
 | Type | Purpose | Examples |
 |------|---------|----------|
 | **Workflow** | Pipeline stages | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` |
-| **Specialized** | Domain best practices | `/react-best-practices`, `/postgres-best-practices` |
+| **Specialized** | Domain best practices (external) | `/react-best-practices`, `/supabase-postgres-best-practices` |
 
 **Specialized skills** are invoked by workflow skills when relevant. To add a new one:
 
