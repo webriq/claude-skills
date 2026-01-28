@@ -1,5 +1,5 @@
 {
   "name": "workflow",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Complete development workflow pipeline: plan → implement → test → document → ship → release. For React/Supabase projects, also install: vercel-labs/agent-skills and supabase/agent-skills"
 }
