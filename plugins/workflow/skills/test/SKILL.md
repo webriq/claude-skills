@@ -119,12 +119,77 @@ Invoke `/test {task-name}` when:
 | `--ci` | Headless mode, **keeps scripts** | Core features, regression protection |
 | `--ci --cleanup` | Headless mode, **deletes scripts** | Minor changes, one-time verification |
 
+---
+
+## CRITICAL: Mode Detection (Execute FIRST)
+
+**You MUST execute this decision tree BEFORE doing anything else:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 1: Parse the command for --ci flag                    │
+└─────────────────────────────────────────────────────────────┘
+                           │
+           ┌───────────────┴───────────────┐
+           │                               │
+           ▼                               ▼
+   Has --ci flag?                    No --ci flag?
+           │                               │
+           │                               │
+           ▼                               ▼
+┌─────────────────────┐      ┌─────────────────────────────────┐
+│ MODE = CI           │      │ STEP 2: Check for Playwright MCP │
+│ Proceed to CI       │      │ Is mcp__playwright__browser_*    │
+│ workflow            │      │ available as a tool?             │
+└─────────────────────┘      └─────────────────────────────────┘
+                                           │
+                             ┌─────────────┴─────────────┐
+                             │                           │
+                             ▼                           ▼
+                      Available?                  NOT Available?
+                             │                           │
+                             ▼                           ▼
+               ┌─────────────────────┐    ┌──────────────────────────┐
+               │ MODE = Interactive  │    │ **STOP IMMEDIATELY**     │
+               │ Proceed to          │    │                          │
+               │ Interactive workflow│    │ Display this message:    │
+               └─────────────────────┘    │ "Playwright MCP is not   │
+                                          │ configured. See prereqs."│
+                                          │                          │
+                                          │ DO NOT:                  │
+                                          │ - Fall back to CI mode   │
+                                          │ - Use curl/source code   │
+                                          │ - Proceed with testing   │
+                                          └──────────────────────────┘
+```
+
+**ABSOLUTE RULES:**
+1. **No --ci flag + No Playwright MCP = STOP.** Do not proceed. Do not fall back.
+2. **No --ci flag + Playwright MCP available = Interactive mode ONLY.** Never create test scripts.
+3. **--ci flag present = CI mode.** Playwright MCP not required.
+
+**How to check for Playwright MCP:**
+Look for tools starting with `mcp__playwright__browser_` in your available tools. If you see tools like `mcp__playwright__browser_navigate`, `mcp__playwright__browser_click`, etc., Playwright MCP is available.
+
+---
+
 ## Workflow
 
-### Interactive Mode (Default)
+**IMPORTANT: Always execute "Mode Detection" section FIRST before following any workflow below.**
+
+### Interactive Mode (Default) — REQUIRES Playwright MCP
+
+**Entry condition:** No `--ci` flag AND Playwright MCP tools are available.
+
+**If Playwright MCP is NOT available:** STOP. Do not use this workflow. Do not fall back to CI mode. Notify user to configure Playwright MCP.
 
 ```
 /test {task-name}
+       ↓
+0. [ALREADY DONE] Mode Detection confirmed:
+   - No --ci flag
+   - Playwright MCP IS available
+   - MODE = Interactive (locked in)
        ↓
 1. Read task document for requirements
 2. Check Automation field (manual | auto)
@@ -133,6 +198,9 @@ Invoke `/test {task-name}` when:
 5. Check if email testing required (see Email Testing section)
    └── If auth keywords found → MUST use Mailinator
 6. Execute tests via Playwright MCP tools directly
+   ⚠️ DO NOT create test script files
+   ⚠️ DO NOT run npx playwright test
+   ⚠️ DO NOT spawn subagents for testing
 7. If auth flow → Verify email received & confirmation works
 8. Write report to docs/testing/{task-name}.md
 9. Update TASKS.md with result
@@ -144,10 +212,19 @@ PASS → notify user       PASS → invoke /document
 FAIL → notify user       FAIL → invoke /implement with test report
 ```
 
-### CI/CD Mode (`--ci` flag)
+### CI/CD Mode (`--ci` flag) — Does NOT require Playwright MCP
+
+**Entry condition:** `--ci` flag IS present in the command.
+
+**IMPORTANT:** This mode is ONLY used when the user explicitly provides the `--ci` flag. Never auto-switch to this mode when Playwright MCP is unavailable.
 
 ```
 /test --ci {task-name}
+       ↓
+0. [ALREADY DONE] Mode Detection confirmed:
+   - --ci flag IS present
+   - MODE = CI (locked in)
+   - Playwright MCP: not required
        ↓
 1. Read task document for requirements
 2. Create test directory: tests/e2e/{task-name}/
@@ -176,6 +253,52 @@ Same as above, but ALSO deletes tests/e2e/{task-name}/ at step 7
 
 ---
 
+## CI Mode: Directory Structure (CRITICAL)
+
+**You MUST follow this exact directory structure. Do NOT put files in wrong locations.**
+
+```
+project-root/
+├── tests/
+│   └── e2e/
+│       └── {task-name}/           ← Test scripts go HERE (*.spec.ts)
+│           ├── {task-name}.spec.ts
+│           └── helpers.ts (if needed)
+│
+├── docs/
+│   └── testing/
+│       └── {task-name}.md         ← ONLY the final report goes HERE
+│
+└── (temporary - ALWAYS DELETE)
+    ├── TEST_REPORT.md
+    ├── TEST_CASES.md
+    ├── TEST_SUMMARY.txt
+    ├── test_results.md
+    ├── test_execution_summary.md
+    ├── TEST_REPORT_INDEX.md
+    ├── playwright_mcp_test_log.md
+    ├── test-screenshots/
+    ├── test-results/
+    └── playwright-report/
+```
+
+### PROHIBITED File Locations
+
+**NEVER create these files in `docs/testing/`:**
+- ❌ `docs/testing/TEST_CASES.md`
+- ❌ `docs/testing/test_results.md`
+- ❌ `docs/testing/test_execution_summary.md`
+- ❌ `docs/testing/TEST_REPORT_INDEX.md`
+- ❌ `docs/testing/playwright_mcp_test_log.md`
+- ❌ `docs/testing/TEST_SUMMARY.txt`
+- ❌ `docs/testing/*.spec.ts` (test scripts)
+
+**ONLY allowed in `docs/testing/`:**
+- ✅ `docs/testing/{task-name}.md` (final test report, one per task)
+- ✅ `docs/testing/README.md` (if project has one)
+
+---
+
 ## CI Mode: Artifact Management
 
 ### Default Behavior (Scripts Kept)
@@ -184,15 +307,26 @@ By default, `/test --ci {task-name}` **keeps test scripts** for regression testi
 
 ```
 tests/e2e/{task-name}/     ← KEPT for future regression testing
-docs/testing/{task-name}.md ← KEPT as test report
+docs/testing/{task-name}.md ← KEPT as final test report (ONLY file in docs/testing/)
 ```
 
-**Temporary artifacts are always cleaned:**
+**Temporary artifacts are ALWAYS cleaned (run at end of every CI test):**
 ```bash
-# Always remove these (regardless of --cleanup flag)
-rm -f TEST_REPORT.md TEST_SUMMARY.txt
+# Remove from project root
+rm -f TEST_REPORT.md TEST_SUMMARY.txt TEST_CASES.md
+rm -f test_results.md test_execution_summary.md TEST_REPORT_INDEX.md
+rm -f playwright_mcp_test_log.md
 rm -rf test-screenshots/ test-results/ playwright-report/
-rm -f test-*.ts test-*.js  # Root-level scripts (should never exist)
+rm -f test-*.ts test-*.js *.spec.ts  # Root-level scripts
+
+# Remove from docs/testing/ (ONLY final report should remain)
+rm -f docs/testing/TEST_CASES.md
+rm -f docs/testing/test_results.md
+rm -f docs/testing/test_execution_summary.md
+rm -f docs/testing/TEST_REPORT_INDEX.md
+rm -f docs/testing/playwright_mcp_test_log.md
+rm -f docs/testing/TEST_SUMMARY.txt
+rm -f docs/testing/*.spec.ts
 ```
 
 ### With `--cleanup` Flag (Scripts Deleted)
@@ -210,15 +344,19 @@ rmdir tests 2>/dev/null || true
 
 ### Artifact Summary
 
-| Artifact | `--ci` (default) | `--ci --cleanup` |
-|----------|------------------|------------------|
-| `docs/testing/{task-name}.md` | ✅ Keep | ✅ Keep |
-| `tests/e2e/{task-name}/` | ✅ Keep | ❌ Delete |
-| `TEST_REPORT.md` (root) | ❌ Delete | ❌ Delete |
-| `TEST_SUMMARY.txt` | ❌ Delete | ❌ Delete |
-| `test-screenshots/` | ❌ Delete | ❌ Delete |
-| `playwright-report/` | ❌ Delete | ❌ Delete |
-| `test-results/` | ❌ Delete | ❌ Delete |
+| Artifact | Location | `--ci` | `--ci --cleanup` |
+|----------|----------|--------|------------------|
+| Final test report | `docs/testing/{task-name}.md` | ✅ Keep | ✅ Keep |
+| Test scripts | `tests/e2e/{task-name}/` | ✅ Keep | ❌ Delete |
+| `TEST_CASES.md` | anywhere | ❌ Delete | ❌ Delete |
+| `test_results.md` | anywhere | ❌ Delete | ❌ Delete |
+| `test_execution_summary.md` | anywhere | ❌ Delete | ❌ Delete |
+| `TEST_REPORT_INDEX.md` | anywhere | ❌ Delete | ❌ Delete |
+| `playwright_mcp_test_log.md` | anywhere | ❌ Delete | ❌ Delete |
+| `TEST_SUMMARY.txt` | anywhere | ❌ Delete | ❌ Delete |
+| `test-screenshots/` | anywhere | ❌ Delete | ❌ Delete |
+| `playwright-report/` | anywhere | ❌ Delete | ❌ Delete |
+| `test-results/` | anywhere | ❌ Delete | ❌ Delete |
 
 ### Why Keep Scripts by Default?
 
