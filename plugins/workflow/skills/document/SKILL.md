@@ -64,7 +64,7 @@ docs/testing/{task-name}.md     - Test results & verification
 ```
 
 **IMPORTANT — Context Efficiency:**
-These two documents were created by the `/plan`, `/implement`, and `/test` agents which already analyzed the codebase. Do NOT perform broad codebase exploration. Only read specific source files if you need to verify implementation details for documentation accuracy.
+These two documents were created by the `/task`, `/implement`, and `/test` agents which already analyzed the codebase. Do NOT perform broad codebase exploration. Only read specific source files if you need to verify implementation details for documentation accuracy.
 
 ### 2. Identify Documentation Needs
 

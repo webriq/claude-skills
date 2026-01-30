@@ -8,7 +8,7 @@
 ## Quick Reference
 
 ```
-/plan → /implement → /test → /document → /ship → /release
+/task → /implement → /test → /document → /ship → /release
 ```
 
 | Status | Meaning |
@@ -32,7 +32,7 @@
 
 ## Planned
 
-Tasks ready for `/implement`. Created via `/plan`.
+Tasks ready for `/implement`. Created via `/task`.
 
 | Task | Priority | Type | Task Doc | Created |
 |------|----------|------|----------|---------|
@@ -108,7 +108,7 @@ PRs created via `/ship`. Awaiting merge.
 
 | Skill | Purpose |
 |-------|---------|
-| `/plan` | Create task documents |
+| `/task` | Create task documents |
 | `/implement` | Implement tasks |
 | `/test` | E2E testing (Playwright) |
 | `/document` | Update docs |

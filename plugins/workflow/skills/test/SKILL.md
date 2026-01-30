@@ -10,12 +10,14 @@ model: haiku
 
 ## Prerequisites
 
-**Playwright MCP is REQUIRED.** Before running any tests, verify that `mcp__playwright__browser_navigate` is available as a tool. If Playwright MCP tools are not available:
+### Interactive Mode (Default)
+
+**Playwright MCP is REQUIRED for interactive mode.** Before running tests, verify that `mcp__playwright__browser_navigate` is available as a tool. If Playwright MCP tools are not available:
 
 1. **STOP** - Do not proceed with testing
 2. **Notify the user** with this message:
    ```
-   Playwright MCP is not configured. The /test skill requires browser automation to run E2E tests.
+   Playwright MCP is not configured. Interactive testing requires the MCP server.
 
    Add this to your project's .mcp.json:
    {
@@ -28,8 +30,64 @@ model: haiku
    }
 
    Then restart Claude Code and re-run /test.
+
+   Alternative: Use CI mode which doesn't require MCP:
+   /test --ci {task-name}
    ```
 3. **Do NOT fall back** to curl commands or source code inspection as a substitute for browser testing. This produces misleading test reports.
+
+### CI Mode (`--ci` flag)
+
+**Playwright MCP is NOT required for CI mode.** CI mode uses the standard Playwright test runner.
+
+**Requirements for CI mode:**
+```bash
+# Install Playwright as dev dependency (if not already)
+npm install -D @playwright/test
+
+# Install browsers (first time only)
+npx playwright install
+```
+
+CI mode generates test scripts and runs them with `npx playwright test` - no MCP server needed.
+
+---
+
+## CRITICAL: Mode-Specific Rules
+
+### Interactive Mode (Default) - What NOT To Do
+
+**DO NOT generate test script files.** Interactive mode uses Playwright MCP tools directly in the conversation - NOT by creating external test files.
+
+**Prohibited in Interactive Mode:**
+- ❌ Creating `.ts`, `.js`, or `.spec` test files (e.g., `test-app.ts`, `e2e-test.js`)
+- ❌ Creating `TEST_REPORT.md`, `TEST_SUMMARY.txt` in project root
+- ❌ Creating `test-screenshots/` or similar folders in project root
+- ❌ Running `npx playwright test` or similar CLI commands
+- ❌ Spawning subagents to run headless tests in background
+- ❌ Using "CI/CD style" or "headless mode" testing workflows
+
+**Required in Interactive Mode:**
+- ✅ Use `mcp__playwright__browser_*` tools directly in conversation
+- ✅ Write final report ONLY to `docs/testing/{task-name}.md`
+- ✅ Interactive browser testing where you can see each step
+- ✅ Take screenshots using `mcp__playwright__browser_take_screenshot` (stored in Playwright's temp directory, not project)
+
+### CI Mode (`--ci` flag) - Allowed Actions
+
+**CI mode IS allowed to generate test scripts**, but must follow these rules:
+
+**Allowed in CI Mode:**
+- ✅ Create test scripts in `tests/e2e/{task-name}/` (NOT project root)
+- ✅ Run `npx playwright test` for headless execution
+- ✅ Spawn subagents for parallel test execution
+- ✅ Generate temporary screenshots during testing
+
+**Required in CI Mode:**
+- ✅ Write final report to `docs/testing/{task-name}.md`
+- ✅ **MUST cleanup** all temporary artifacts after tests (see Cleanup section)
+- ✅ Ask user if they want to keep test scripts for CI pipeline
+- ✅ Never leave artifacts in project root
 
 ## When to Use
 
@@ -38,9 +96,32 @@ Invoke `/test {task-name}` when:
 - Implementation is complete from `/implement`
 - Ready to verify the feature works
 
-**Example:** `/test dashboard-redesign`
+### Syntax
+
+```
+/test {task-name}                              → Interactive mode (default)
+/test --ci {task-name}                         → CI mode, keeps scripts (default)
+/test --ci --cleanup {task-name}               → CI mode, deletes scripts after test
+/test --ci {task-name} "instructions"          → CI mode with additional test instructions
+```
+
+**Examples:**
+- `/test dashboard-redesign` - Interactive visual testing
+- `/test --ci auth-flow` - Headless CI testing, scripts kept for regression
+- `/test --ci --cleanup button-styling` - CI testing, scripts deleted (minor changes)
+- `/test --ci checkout "test empty cart and full cart"` - CI mode with specific scenarios
+
+### Flag Reference
+
+| Flag | Behavior | Use When |
+|------|----------|----------|
+| (none) | Interactive mode with Playwright MCP | Debugging, demos, visual verification |
+| `--ci` | Headless mode, **keeps scripts** | Core features, regression protection |
+| `--ci --cleanup` | Headless mode, **deletes scripts** | Minor changes, one-time verification |
 
 ## Workflow
+
+### Interactive Mode (Default)
 
 ```
 /test {task-name}
@@ -49,9 +130,9 @@ Invoke `/test {task-name}` when:
 2. Check Automation field (manual | auto)
 3. Read implementation for context
 4. Create test plan
-5. Check if email testing required (see Step 5 below)
+5. Check if email testing required (see Email Testing section)
    └── If auth keywords found → MUST use Mailinator
-6. Execute tests via Playwright MCP
+6. Execute tests via Playwright MCP tools directly
 7. If auth flow → Verify email received & confirmation works
 8. Write report to docs/testing/{task-name}.md
 9. Update TASKS.md with result
@@ -62,6 +143,100 @@ Invoke `/test {task-name}` when:
 PASS → notify user       PASS → invoke /document
 FAIL → notify user       FAIL → invoke /implement with test report
 ```
+
+### CI/CD Mode (`--ci` flag)
+
+```
+/test --ci {task-name}
+       ↓
+1. Read task document for requirements
+2. Create test directory: tests/e2e/{task-name}/
+3. Generate Playwright test script(s)
+4. Run tests headlessly via: npx playwright test
+5. Capture results and screenshots
+6. Write report to docs/testing/{task-name}.md
+7. Clean temporary artifacts (keep test scripts by default)
+8. Update TASKS.md with result
+       ↓
+Same automation mode handling as interactive
+```
+
+```
+/test --ci --cleanup {task-name}
+       ↓
+Same as above, but ALSO deletes tests/e2e/{task-name}/ at step 7
+```
+
+**CI Mode Advantages:**
+- Parallel test execution
+- Test scripts kept by default for regression testing
+- Faster for large test suites
+- Can spawn subagents for concurrent testing
+- Accumulated tests run on every future PR
+
+---
+
+## CI Mode: Artifact Management
+
+### Default Behavior (Scripts Kept)
+
+By default, `/test --ci {task-name}` **keeps test scripts** for regression testing:
+
+```
+tests/e2e/{task-name}/     ← KEPT for future regression testing
+docs/testing/{task-name}.md ← KEPT as test report
+```
+
+**Temporary artifacts are always cleaned:**
+```bash
+# Always remove these (regardless of --cleanup flag)
+rm -f TEST_REPORT.md TEST_SUMMARY.txt
+rm -rf test-screenshots/ test-results/ playwright-report/
+rm -f test-*.ts test-*.js  # Root-level scripts (should never exist)
+```
+
+### With `--cleanup` Flag (Scripts Deleted)
+
+When using `/test --ci --cleanup {task-name}`, test scripts are also deleted:
+
+```bash
+# Additional cleanup with --cleanup flag
+rm -rf tests/e2e/{task-name}/
+
+# Clean empty parent directories
+rmdir tests/e2e 2>/dev/null || true
+rmdir tests 2>/dev/null || true
+```
+
+### Artifact Summary
+
+| Artifact | `--ci` (default) | `--ci --cleanup` |
+|----------|------------------|------------------|
+| `docs/testing/{task-name}.md` | ✅ Keep | ✅ Keep |
+| `tests/e2e/{task-name}/` | ✅ Keep | ❌ Delete |
+| `TEST_REPORT.md` (root) | ❌ Delete | ❌ Delete |
+| `TEST_SUMMARY.txt` | ❌ Delete | ❌ Delete |
+| `test-screenshots/` | ❌ Delete | ❌ Delete |
+| `playwright-report/` | ❌ Delete | ❌ Delete |
+| `test-results/` | ❌ Delete | ❌ Delete |
+
+### Why Keep Scripts by Default?
+
+```
+Feature A: /test --ci auth-flow
+  → tests/e2e/auth-flow/ KEPT
+
+Feature B: /test --ci checkout
+  → tests/e2e/checkout/ KEPT
+
+Future PR touches auth code:
+  → npx playwright test runs BOTH
+  → Catches if new code breaks auth ✅
+```
+
+**Safe by default** - scripts accumulate for regression protection. Use `--cleanup` only for minor, one-time verifications.
+
+---
 
 ## Auto Mode Behavior
 

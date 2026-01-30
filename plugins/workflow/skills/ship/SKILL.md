@@ -30,8 +30,12 @@ Invoke `/ship {task-name}` when:
 6. Create Pull Request
 7. Update TASKS.md with PR link
        ↓
-After merge → Move to "Shipped"
+After merge → Update "Merged" column (stay in "Ready to Ship")
+       ↓
+/release → Moves to "Shipped" with version
 ```
+
+**IMPORTANT:** Items stay in "Ready to Ship" even after merge. Only `/release` moves items to "Shipped" with the release version. This ensures proper release tracking.
 
 ## Auto Mode Behavior
 
@@ -104,10 +108,12 @@ Move task to "Ready to Ship":
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Task Doc | Approved |
-|------|--------|----| ---------|----------|
-| Quick Actions Redesign | feature/quick-actions | Pending | [link](...) | Jan 25 |
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| Quick Actions Redesign | feature/quick-actions | Pending | No | [link](...) |
 ```
+
+**Note:** The "Merged" column tracks merge status. Items stay here until `/release` is run.
 
 ---
 
@@ -229,43 +235,55 @@ After PR is created:
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Task Doc | Approved |
-|------|--------|----| ---------|----------|
-| Quick Actions Redesign | feature/quick-actions | [#123](link) | [link](...) | Jan 25 |
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| Quick Actions Redesign | feature/quick-actions | [#123](link) | No | [link](...) |
 ```
 
 ---
 
 ## Post-Merge Actions
 
-After PR is merged:
+After PR is merged, **update the "Merged" column but keep in "Ready to Ship"**:
 
-### 1. Update TASKS.md
-
-Move to "Shipped" section:
+### 1. Update TASKS.md Merged Status
 
 ```markdown
-## Shipped (January 2026)
+## Ready to Ship
 
-| Task | PR | Shipped | Notes |
-|------|-----|---------|-------|
-| Dashboard Redesign | [#123](link) | Jan 26 | Homepage update |
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| Quick Actions Redesign | feature/quick-actions | [#123](link) | ✅ Jan 26 | [link](...) |
 ```
 
-### 2. Clean Up Task Document
+**IMPORTANT:** Do NOT move to "Shipped" yet. Items stay in "Ready to Ship" until `/release` is run. This allows `/release` to:
+1. Know which items need to be included in the release
+2. Properly track which release each feature belongs to
 
-Update task document status:
+### 2. Update Task Document Status
+
+Update task document to reflect merge:
 
 ```markdown
-> **Status:** SHIPPED
-> **Shipped:** {Date}
+> **Status:** MERGED
+> **Merged:** {Date}
 > **PR:** #{number}
 ```
 
-### 3. Archive or Keep
+### 3. When to Run /release
 
-- Keep task doc in `docs/task/` for reference
-- Or move to `docs/archive/tasks/` if desired
+After one or more items are merged, run `/release` to:
+- Create versioned release with changelog
+- Move ALL merged items from "Ready to Ship" to "Shipped"
+- Tag each item with the release version
+
+```markdown
+## Shipped
+
+| Task | PR | Release | Shipped |
+|------|-----|---------|---------|
+| Quick Actions Redesign | [#123](link) | v1.2.0 | Jan 26 |
+```
 
 ---
 
@@ -344,7 +362,7 @@ Task: {task-name}
 Automation: Full pipeline executed
 
 Summary:
-├── /plan ✓ (task document created)
+├── /task ✓ (task document created)
 ├── /implement ✓ (code written)
 ├── /test ✓ (tests passed)
 ├── /document ✓ (docs updated)

@@ -29,22 +29,25 @@ Invoke `/release` when:
        ↓
 1. Get current version from git tags
 2. Read "Ready to Ship" items from TASKS.md
-3. Read each task document for Type & Version Impact
-4. Auto-calculate version (if not explicit)
+3. Filter: Only include items with "Merged" status (✅)
+4. Read each task document for Type & Version Impact
+5. Auto-calculate version (if not explicit)
    ├── Any major → major bump
    ├── Any minor → minor bump
    └── All patch → patch bump
-5. Categorize changes by type
-6. Generate changelog entry
-7. Update CHANGELOG.md
-8. Commit changelog
-9. Create git tag
-10. Push to remote
-11. Create GitHub Release
-12. Move items to "Shipped" in TASKS.md
-       ↓
+6. Categorize changes by type
+7. Generate changelog entry
+8. Update CHANGELOG.md
+9. Commit changelog
+10. Create git tag
+11. Push to remote
+12. Create GitHub Release
+13. Move ONLY merged items to "Shipped" with release version
+        ↓
 Release complete!
 ```
+
+**IMPORTANT:** Only items with "Merged" status (✅) in "Ready to Ship" are included in the release. Unmerged PRs stay in "Ready to Ship" for the next release.
 
 ## Pre-Release Checklist
 
@@ -126,18 +129,23 @@ New version = v1.3.0
   - `documentation` → `patch`
   - `chore` → `patch`
 
-### Step 4: Read "Ready to Ship" Items
+### Step 4: Read "Ready to Ship" Items (Merged Only)
 
-Parse TASKS.md for items in "Ready to Ship" section:
+Parse TASKS.md for items in "Ready to Ship" section. **Only include items with Merged = ✅**:
 
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Task Doc | Approved |
-|------|--------|----| ---------|----------|
-| Quick Actions Redesign | feature/quick-actions | #123 | [link](...) | Jan 25 |
-| Session Fix | fix/session-persist | #124 | [link](...) | Jan 25 |
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| Quick Actions Redesign | feature/quick-actions | #123 | ✅ Jan 25 | [link](...) | ← INCLUDE
+| Session Fix | fix/session-persist | #124 | ✅ Jan 25 | [link](...) | ← INCLUDE
+| New Feature | feature/new | #125 | No | [link](...) | ← SKIP (not merged)
 ```
+
+**Filter logic:**
+- `✅` or date in Merged column → Include in release
+- `No` or empty in Merged column → Skip (not ready)
 
 ### Step 4: Categorize Changes
 
@@ -274,24 +282,42 @@ gh release create v1.1.22 \
 
 ### Step 11: Update TASKS.md
 
-Move items from "Ready to Ship" to "Shipped":
+Move **only merged items** from "Ready to Ship" to "Shipped". Unmerged items stay for next release:
 
+**Before:**
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Task Doc | Approved |
-|------|--------|----| ---------|----------|
-| - | - | - | - | - |
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| Quick Actions Redesign | feature/quick-actions | #123 | ✅ Jan 25 | [link](...) |
+| Session Fix | fix/session-persist | #124 | ✅ Jan 25 | [link](...) |
+| New Feature | feature/new | #125 | No | [link](...) |
+```
+
+**After:**
+```markdown
+## Ready to Ship
+
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+| New Feature | feature/new | #125 | No | [link](...) |
 
 ---
 
-## Shipped (January 2026)
+## Shipped
 
-| Task | PR | Shipped | Release |
+| Task | PR | Release | Shipped |
 |------|-----|---------|---------|
-| Quick Actions Grid Redesign | #123 | Jan 26 | v1.1.22 |
-| Session Persistence Fix | #124 | Jan 26 | v1.1.22 |
+| Quick Actions Grid Redesign | #123 | v1.1.22 | Jan 26 |
+| Session Persistence Fix | #124 | v1.1.22 | Jan 26 |
 ```
+
+**Key points:**
+- Only merged items (✅) move to "Shipped"
+- Each item gets the release version (v1.1.22)
+- Unmerged items stay in "Ready to Ship" for next release
+- This ensures `/release` always knows exactly what to include
 
 ---
 
@@ -375,14 +401,18 @@ Next release will be: v1.1.23 (patch) / v1.2.0 (minor) / v2.0.0 (major)
 
 ## Handling Edge Cases
 
-### No Items in "Ready to Ship"
+### No Merged Items in "Ready to Ship"
 
 ```
-Error: No items found in "Ready to Ship" section.
+Error: No merged items found in "Ready to Ship" section.
 
 Please ensure:
-1. Features have been merged via /ship
-2. TASKS.md has items in "Ready to Ship" section
+1. PRs have been created via /ship
+2. PRs have been merged (Merged column shows ✅)
+3. TASKS.md "Ready to Ship" section has items with Merged = ✅
+
+Current "Ready to Ship" items:
+- {task-name}: Not merged (Merged = No)
 ```
 
 ### Tag Already Exists
@@ -408,7 +438,7 @@ If a task document doesn't have a `Type` field:
 | Skill | When to Use |
 |-------|-------------|
 | `/ship` | Before /release - gets items to "Ready to Ship" |
-| `/plan` | Add `Type` field when planning tasks |
+| `/task` | Add `Type` field when planning tasks |
 | `/document` | Ensure docs are updated before release |
 
 ## Recommended Plugins (Optional)
@@ -424,7 +454,7 @@ These plugins provide best practices reference but must be installed separately:
 
 ## Task Document Type Field
 
-When using `/plan`, include the Type field:
+When using `/task`, include the Type field:
 
 ```markdown
 > **Status:** PLANNED

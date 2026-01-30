@@ -32,7 +32,7 @@ When invoked with `auto`, the implement skill:
 3. After completion, automatically spawns `/test {task-name}` (haiku)
 4. The pipeline continues: test → document → ship
 
-This lets you skip `/plan auto` and trigger the full pipeline from implement:
+This lets you skip `/task auto` and trigger the full pipeline from implement:
 ```
 /implement auto {task-name} → implement code
     ↓
@@ -52,7 +52,9 @@ FAIL → /implement (with test report) → retry
 3. If "auto" flag → set Automation: auto in task doc
 4. Check Automation field (manual | auto)
 5. Move task to "## In Progress" in TASKS.md
-6. Invoke specialized skills as needed
+6. ⚠️ MANDATORY: Invoke specialized skills (see Step 2 below)
+   └── /vercel-react-best-practices (if installed + React code)
+   └── /supabase-postgres-best-practices (if installed + DB code)
 7. Implement following task document steps
 8. Update status to "TESTING" when complete
        ↓
@@ -62,6 +64,8 @@ FAIL → /implement (with test report) → retry
 Notify user              Invoke /test {task-name}
 Ready for /test
 ```
+
+**⚠️ GUARDRAIL:** Step 6 is NOT optional. If specialized skills are installed and relevant to the task, they MUST be invoked BEFORE writing any code. See "Step 2: Invoke Specialized Skills" below for details.
 
 ## Auto Mode Behavior
 
@@ -91,7 +95,7 @@ docs/task/{task-name}.md
 ```
 
 **IMPORTANT — Context Efficiency:**
-The task document was created by the `/plan` agent, which already performed a thorough codebase analysis. The task document contains all the context you need: requirements, file paths, implementation steps, and architectural decisions.
+The task document was created by the `/task` agent, which already performed a thorough codebase analysis. The task document contains all the context you need: requirements, file paths, implementation steps, and architectural decisions.
 
 - **DO** trust the task document as your primary source of truth
 - **DO** read the specific files listed in the task document's "Files to Modify" or implementation steps
@@ -106,21 +110,58 @@ Understand:
 - File changes needed
 - Implementation steps
 
-### 2. Invoke Specialized Skills (MUST Invoke If Installed)
+### 2. Invoke Specialized Skills (MANDATORY - DO NOT SKIP)
 
-If these plugins are installed, you MUST invoke them for best practices — do NOT skip them:
+**CRITICAL GUARDRAIL:** Before writing ANY code, you MUST check for and invoke specialized skills. This is NOT optional.
 
-For React/Next.js code:
+#### Step 2a: Detect Installed Skills
+
+Check if these skills are available by looking for them in the available skills/tools:
+
+| Skill | Detection | Invoke When |
+|-------|-----------|-------------|
+| `/vercel-react-best-practices` | Skill is listed in available tools | ANY React/Next.js/TypeScript code |
+| `/supabase-postgres-best-practices` | Skill is listed in available tools | ANY database queries, RLS, schema, Supabase code |
+
+#### Step 2b: Invoke BEFORE Writing Code
+
+**If skill is detected → MUST invoke it FIRST, before writing any code.**
+
 ```
+# For React/Next.js projects:
 /vercel-react-best-practices
-```
 
-For database queries, RLS, schema:
-```
+# For Supabase/PostgreSQL projects:
 /supabase-postgres-best-practices
 ```
 
-> **Important:** These plugins are only optional to *install*. Once installed, they are required and MUST be invoked. Do not skip them or treat them as unnecessary.
+#### Step 2c: Verification Checklist
+
+Before proceeding to Step 3, confirm:
+
+- [ ] Checked if `/vercel-react-best-practices` is available
+- [ ] If available AND task involves React/Next.js → Invoked it
+- [ ] Checked if `/supabase-postgres-best-practices` is available
+- [ ] If available AND task involves database → Invoked it
+
+#### HARD STOP - Do NOT Proceed If:
+
+```
+⛔ STOP: You detected a specialized skill is installed but did not invoke it.
+
+This is a guardrail violation. You MUST:
+1. Invoke the skill NOW before writing any code
+2. Apply the best practices from the skill to your implementation
+3. Only then proceed to Step 3
+
+Skipping specialized skills leads to:
+- Suboptimal code patterns
+- Performance issues
+- Security vulnerabilities
+- Technical debt
+```
+
+> **Why this matters:** These skills contain critical best practices from Vercel and Supabase engineers. Skipping them means writing code that may have performance issues, security vulnerabilities, or anti-patterns that will need to be fixed later.
 
 ### 3. Update TASKS.md
 
@@ -257,7 +298,29 @@ Add completion notes:
 > **Implementation Notes:** {Any important notes for tester}
 ```
 
-### 3. Inform User / Chain to Next Skill
+### 3. Pre-Completion Verification (REQUIRED)
+
+**Before marking implementation complete, verify:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚠️ SPECIALIZED SKILLS VERIFICATION                          │
+├─────────────────────────────────────────────────────────────┤
+│ □ Did task involve React/Next.js code?                      │
+│   → If YES: Did you invoke /vercel-react-best-practices?    │
+│                                                             │
+│ □ Did task involve database/Supabase code?                  │
+│   → If YES: Did you invoke /supabase-postgres-best-practices│
+│                                                             │
+│ □ If skill was available but NOT invoked:                   │
+│   → STOP. Go back and invoke it. Apply best practices.      │
+│   → Then return here to complete.                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**If you skipped a specialized skill:** You must go back, invoke it, review your code against the best practices, and make any necessary corrections before proceeding.
+
+### 4. Inform User / Chain to Next Skill
 
 **Check the task document for `Automation: auto` field.**
 
@@ -295,7 +358,7 @@ Use Task tool to spawn test agent with **model: haiku**:
 1. Document the blocker in task document
 2. Update TASKS.md status to "Blocked"
 3. Inform user with specific blocker details
-4. Create sub-task if needed via `/plan`
+4. Create sub-task if needed via `/task`
 
 ### Requirement Unclear
 
@@ -311,13 +374,31 @@ Use Task tool to spawn test agent with **model: haiku**:
 
 ---
 
-## Recommended Plugins (Install Separately)
+## Specialized Skills (MANDATORY When Installed)
 
-These plugins must be installed separately. **Once installed, they MUST be invoked** — do not skip them:
+These plugins must be installed separately. **Once installed, invocation is MANDATORY — not optional.**
 
 | Plugin | Install From | When to Invoke |
 |--------|--------------|----------------|
-| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js projects |
-| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Supabase/PostgreSQL projects |
+| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | ANY React/Next.js/TypeScript code |
+| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | ANY database queries, RLS, schema, Supabase code |
 
-If installed, you MUST invoke with `/vercel-react-best-practices` or `/supabase-postgres-best-practices` during implementation.
+### Enforcement Summary
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ SPECIALIZED SKILLS ARE NOT OPTIONAL ONCE INSTALLED             │
+├────────────────────────────────────────────────────────────────┤
+│ 1. BEFORE writing code → Check if skills are available         │
+│ 2. IF available AND relevant → INVOKE immediately              │
+│ 3. APPLY best practices to your implementation                 │
+│ 4. BEFORE completing → Verify you invoked required skills      │
+│ 5. IF skipped → Go back, invoke, review code, fix issues       │
+└────────────────────────────────────────────────────────────────┘
+```
+
+Failure to invoke specialized skills when available leads to:
+- Code that violates best practices
+- Performance issues that need fixing later
+- Security vulnerabilities
+- Technical debt and rework

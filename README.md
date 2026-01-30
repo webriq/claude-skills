@@ -6,6 +6,8 @@
 
 ### Step 1: Install Workflow Plugin
 
+#### Option A: Via Plugin Marketplace (Recommended)
+
 Add the marketplace to Claude Code and install the workflow plugin:
 
 ```bash
@@ -20,11 +22,29 @@ Add the marketplace to Claude Code and install the workflow plugin:
 # 5. Enable "workflow"
 ```
 
+#### Option B: Via npx skills CLI (Alternative)
+
+If you're having issues with the plugin marketplace, use the CLI:
+
+```bash
+# Install globally
+npx skills add eljun/claude-skills -y -g
+
+# Or install to project only
+npx skills add eljun/claude-skills -y
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-y` | Skip confirmation prompts |
+| `-g` | Install globally (available in all projects) |
+
 This installs the core workflow skills:
 
 | Skill | Purpose |
 |-------|---------|
-| `/plan` | Plan features and create task documents |
+| `/task` | Plan features and create task documents |
 | `/implement` | Implement tasks step by step |
 | `/test` | Run E2E tests via Playwright |
 | `/document` | Generate feature docs and guides |
@@ -58,13 +78,17 @@ For each command, follow the prompts:
 | `/vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js performance optimization |
 | `/supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Database queries, RLS, schema design |
 
-When installed, the workflow skills (`/plan`, `/implement`, etc.) will automatically reference these during relevant tasks.
+When installed, the workflow skills (`/task`, `/implement`, etc.) will automatically reference these during relevant tasks.
 
-### Step 3: Configure Playwright MCP (Required for `/test`)
+### Step 3: Configure Playwright for `/test`
 
-The `/test` skill requires the **Playwright MCP server** for browser-based E2E testing. Without it, tests will silently fall back to curl/code inspection instead of real browser automation.
+The `/test` skill supports two modes with different requirements:
 
-Add this to your project's `.mcp.json` (create the file if it doesn't exist):
+#### Option A: Interactive Mode (Default)
+
+For visual browser testing where you see each step in real-time.
+
+**Requires Playwright MCP.** Add this to your project's `.mcp.json`:
 
 ```json
 {
@@ -77,39 +101,75 @@ Add this to your project's `.mcp.json` (create the file if it doesn't exist):
 }
 ```
 
-Or add it globally via Claude Code settings if you want it available across all projects.
+**Usage:** `/test {task-name}`
 
-> **How to verify:** Run `/test` and check that the test report mentions actual browser interactions (snapshots, clicks, screenshots) rather than curl commands or source code inspection.
+#### Option B: CI Mode (Headless)
+
+For headless testing with generated test scripts. Faster, supports parallel execution.
+
+**Requires Playwright package** (no MCP needed):
+
+```bash
+# Install Playwright
+npm install -D @playwright/test
+
+# Install browsers (first time only)
+npx playwright install
+```
+
+**Usage:**
+- `/test --ci {task-name}` - keeps test scripts (default)
+- `/test --ci --cleanup {task-name}` - deletes test scripts after
+
+#### Comparison
+
+| Feature | Interactive | CI Mode |
+|---------|-------------|---------|
+| Setup | Playwright MCP | `@playwright/test` package |
+| Visibility | See browser in real-time | Headless (background) |
+| Speed | Sequential | Parallel execution |
+| Test scripts | Not created | Kept by default for regression |
+| Best for | Debugging, demos | Large test suites, automation |
+
+#### CI Mode Flags
+
+| Command | Behavior |
+|---------|----------|
+| `/test --ci {task}` | Run tests, **keep scripts** for regression (default) |
+| `/test --ci --cleanup {task}` | Run tests, **delete scripts** after (one-time verification) |
+
+> **Tip:** Use `--ci` (default) for core features to build regression test suite. Use `--ci --cleanup` for minor changes that don't need long-term testing.
 
 ### Step 4: Project Setup
 
 Create the required folders in your project:
 
 ```bash
-mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs
+mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs tests/e2e
 ```
 
 | Folder | Purpose |
 |--------|---------|
-| `docs/task/` | Task documents created by `/plan` |
+| `docs/task/` | Task documents created by `/task` |
 | `docs/testing/` | Test reports created by `/test` |
 | `docs/features/` | Feature documentation created by `/document` |
 | `docs/guides/` | User guides created by `/document` |
 | `docs/changelogs/` | Changelog created by `/release` |
-| `TASKS.md` | Task tracker (created automatically by `/plan`) |
+| `tests/e2e/` | E2E test scripts created by `/test --ci` |
+| `TASKS.md` | Task tracker (created automatically by `/task`) |
 
 ## Quick Start
 
 ```bash
 # Manual Mode - You control each step
-/plan
+/task
 /implement {task-name}
 /test {task-name}
 /document {task-name}
 /ship {task-name}
 
 # Auto Mode - Full automation after plan approval
-/plan auto
+/task auto
 # → After you approve, runs: implement → test → document → ship automatically
 
 # Auto Mode - Skip planning, auto-chain from implement
@@ -121,11 +181,11 @@ mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs
 
 ## Workflow Overview
 
-### Manual Mode (`/plan`)
+### Manual Mode (`/task`)
 
 ```
 ┌────────┐   ┌────────────┐   ┌────────┐   ┌──────────┐   ┌────────┐   ┌──────────┐
-│ /plan  │ → │ /implement │ → │ /test  │ → │/document │ → │ /ship  │ → │ /release │
+│ /task  │ → │ /implement │ → │ /test  │ → │/document │ → │ /ship  │ → │ /release │
 └────────┘   └────────────┘   └────────┘   └──────────┘   └────────┘   └──────────┘
     │              │              │              │              │              │
     ↓              ↓              ↓              ↓              ↓              ↓
@@ -138,10 +198,10 @@ docs/task/    In Progress     Testing       Approved      Ready to      Shipped
 - After `/document` → **You decide** when to `/ship`
 - After `/ship` → **You decide** when to `/release`
 
-### Auto Mode (`/plan auto` or `/implement auto`)
+### Auto Mode (`/task auto` or `/implement auto`)
 
 ```
-/plan auto → User approves plan       /implement auto {task}
+/task auto → User approves plan       /implement auto {task}
     ↓                                        ↓
 /implement                             Implement code
     ↓                                        ↓
@@ -155,7 +215,7 @@ FAIL → /implement (with test report)
 ```
 
 **Auto Mode Features:**
-- **Two entry points:** Start from `/plan auto` (full pipeline) or `/implement auto` (skip planning)
+- **Two entry points:** Start from `/task auto` (full pipeline) or `/implement auto` (skip planning)
 - **Full automation:** Runs through the remaining pipeline automatically
 - **Test failures:** Auto-retries by sending test report back to implement
 - **PR creation:** Creates PR and notifies you - you decide when to merge
@@ -166,7 +226,7 @@ Each skill uses an optimized model for its task complexity:
 
 | Skill | Model | Reason |
 |-------|-------|--------|
-| `/plan` | **opus** | Complex planning requires advanced reasoning |
+| `/task` | **opus** | Complex planning requires advanced reasoning |
 | `/implement` | **opus** | Complex coding requires advanced reasoning |
 | `/test` | **haiku** | Straightforward test execution |
 | `/document` | **haiku** | Templated documentation work |
@@ -178,7 +238,7 @@ This applies to both manual and auto mode. In auto mode, skills spawn the next a
 
 ## Skills Reference
 
-### 1. `/plan` - Task Planning
+### 1. `/task` - Task Planning
 
 **Purpose:** Discuss requirements and create detailed task documents.
 
@@ -194,7 +254,7 @@ This applies to both manual and auto mode. In auto mode, skills spawn the next a
 **Example:**
 ```
 User: I want to add dark mode to the app
-Claude: /plan
+Claude: /task
 → Discusses requirements
 → Creates docs/task/dark-mode.md
 → Adds to TASKS.md
@@ -237,23 +297,30 @@ Claude: /plan
 
 ### 3. `/test` - Web E2E Testing
 
-**Purpose:** Test **web** implementations using Playwright MCP.
+**Purpose:** Test **web** implementations using Playwright.
 
 **When to use:**
 - Web implementation is complete
 - Task is in "Testing" status
 
+**Modes:**
+| Mode | Command | Test Scripts |
+|------|---------|--------------|
+| Interactive | `/test {task}` | Not created |
+| CI (default) | `/test --ci {task}` | Kept for regression |
+| CI + cleanup | `/test --ci --cleanup {task}` | Deleted after test |
+
 **Output:**
 - Test report in `docs/testing/{task-name}.md`
+- Test scripts in `tests/e2e/{task-name}/` (CI mode, unless `--cleanup`)
 - PASS → Ready for `/document`
 - FAIL → Returns to `/implement`
 
 **Example:**
 ```
-/test user-dashboard
-→ Runs E2E tests via Playwright
-→ Creates test report
-→ Reports PASS/FAIL
+/test user-dashboard              → Interactive visual testing
+/test --ci auth-flow              → CI mode, scripts kept
+/test --ci --cleanup button-fix   → CI mode, scripts deleted
 ```
 
 ---
@@ -331,7 +398,7 @@ Claude: /plan
 
 ## Task Document Template
 
-When `/plan` creates a task, it uses this structure:
+When `/task` creates a task, it uses this structure:
 
 ```markdown
 # {Task Title}
@@ -386,11 +453,11 @@ When `/plan` creates a task, it uses this structure:
 
 ## TASKS.md Structure
 
-The workflow uses these sections in TASKS.md:
+The workflow uses these sections in TASKS.md. **The `/task` skill auto-creates this file if it doesn't exist.**
 
 ```markdown
 ## Planned
-Tasks ready for `/implement`. Created via `/plan`.
+Tasks ready for `/implement`. Created via `/task`.
 | Task | Priority | Task Doc | Created |
 
 ## In Progress
@@ -405,18 +472,31 @@ Tested and approved. Ready for `/document` then `/ship`.
 | Task | Task Doc | Feature Doc | Test Report | Approved |
 
 ## Ready to Ship
-PRs created via `/ship`. Awaiting merge.
-| Task | Branch | PR | Task Doc | Approved |
+PRs created via `/ship`. **Items stay here until `/release`** (even after merge).
+| Task | Branch | PR | Merged | Task Doc |
 
-## Shipped (Month Year)
-| Task | PR | Shipped | Release |
+## Shipped
+Released items. Only `/release` moves items here with version.
+| Task | PR | Release | Shipped |
 ```
+
+### Release Tracking Flow
+
+```
+/ship creates PR → "Ready to Ship" (Merged = No)
+       ↓
+PR merged → Update "Merged" column (Merged = ✅ Jan 26)
+       ↓
+/release → Moves merged items to "Shipped" with version (v1.2.0)
+```
+
+This ensures `/release` always knows exactly which features to include and which release version they belong to.
 
 ---
 
 ## Specialized Skills (External)
 
-These skills provide domain-specific best practices and can be invoked during `/plan` and `/implement`. Install them from their original sources:
+These skills provide domain-specific best practices and can be invoked during `/task` and `/implement`. Install them from their original sources:
 
 | Skill | Purpose | Install From |
 |-------|---------|--------------|
@@ -431,7 +511,7 @@ These skills provide domain-specific best practices and can be invoked during `/
 
 | Type | Purpose | Examples |
 |------|---------|----------|
-| **Workflow** | Pipeline stages | `/plan`, `/implement`, `/test`, `/document`, `/ship`, `/release` |
+| **Workflow** | Pipeline stages | `/task`, `/implement`, `/test`, `/document`, `/ship`, `/release` |
 | **Specialized** | Domain best practices (external) | `/vercel-react-best-practices`, `/supabase-postgres-best-practices` |
 
 **Specialized skills** are invoked by workflow skills when relevant. To add a new one:
@@ -492,7 +572,7 @@ Invoke `/{skill-name}` when:
 
 | Skill | When to Use |
 |-------|-------------|
-| `/plan` | Planning {technology} features |
+| `/task` | Planning {technology} features |
 | `/implement` | Implementing {technology} code |
 ```
 
@@ -559,7 +639,7 @@ Common specialized skills you might want to add:
 
 ## Best Practices
 
-### For Planning (`/plan`)
+### For Planning (`/task`)
 - Be specific about requirements
 - Include acceptance criteria
 - Note any dependencies or blockers
@@ -597,6 +677,12 @@ Common specialized skills you might want to add:
 
 ## Troubleshooting
 
+### Plugin marketplace installation fails
+If `/plugin` marketplace method doesn't work, use the CLI instead:
+```bash
+npx skills add eljun/claude-skills -y -g
+```
+
 ### "Task not found"
 - Check TASKS.md for the task entry
 - Verify task document exists in `docs/task/`
@@ -621,6 +707,7 @@ Common specialized skills you might want to add:
 |---------|----------|
 | Task documents | `docs/task/*.md` |
 | Test reports | `docs/testing/*.md` |
+| E2E test scripts | `tests/e2e/*/` |
 | Feature docs | `docs/features/*.md` |
 | User guides | `docs/guides/*.md` |
 | Changelog | `docs/changelogs/CHANGELOG.md` |

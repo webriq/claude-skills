@@ -29,15 +29,15 @@ curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/m
 ## The Pipeline
 
 ```
-/plan → /implement → /test → /document → /ship → /release
+/task → /implement → /test → /document → /ship → /release
 ```
 
 ## Commands
 
 | Command | Model | What it does | Output |
 |---------|-------|--------------|--------|
-| `/plan` | opus | Plan new feature/fix (manual mode) | `docs/task/*.md` |
-| `/plan auto` | opus | Plan + full automation after approval | Auto pipeline |
+| `/task` | opus | Plan new feature/fix (manual mode) | `docs/task/*.md` |
+| `/task auto` | opus | Plan + full automation after approval | Auto pipeline |
 | `/implement {task}` | opus | Code the task | Working feature |
 | `/implement auto {task}` | opus | Code + auto-chain through pipeline | Auto pipeline |
 | `/test {task}` | haiku | Run web E2E tests (Playwright) | `docs/testing/*.md` |
@@ -48,7 +48,7 @@ curl -o TASKS.md https://raw.githubusercontent.com/your-username/claude-skills/m
 ## Auto Mode
 
 ```bash
-/plan auto              # After approval: implement → test → document → ship (automatic)
+/task auto              # After approval: implement → test → document → ship (automatic)
 /implement auto {task}  # Skip planning: test → document → ship (task doc must exist)
 ```
 
@@ -81,7 +81,7 @@ PLANNED → IN_PROGRESS → TESTING → APPROVED → READY_TO_SHIP → SHIPPED
 /release major    # Force v1.0.0 → v2.0.0
 ```
 
-## Version Impact (set in /plan)
+## Version Impact (set in /task)
 
 | Type | Default Impact | Bump |
 |------|----------------|------|
@@ -127,7 +127,7 @@ See README.md "Adding New Specialized Skills" for full template.
 
 ```bash
 # New feature (manual - you control each step)
-/plan
+/task
 /clear
 /implement my-feature
 /test my-feature
@@ -135,7 +135,7 @@ See README.md "Adding New Specialized Skills" for full template.
 /ship my-feature
 
 # New feature (auto - hands-off after approval)
-/plan auto
+/task auto
 # Approve the plan → automation handles the rest
 
 # Auto implement (task doc already exists, skip planning)
@@ -143,13 +143,13 @@ See README.md "Adding New Specialized Skills" for full template.
 # → implement → test → document → ship (automatic)
 
 # Quick fix
-/plan  # (set Type: bugfix, Version Impact: patch)
+/task  # (set Type: bugfix, Version Impact: patch)
 /implement the-fix
 /test the-fix
 /ship the-fix
 
 # Quick fix (auto)
-/plan auto  # (set Type: bugfix, Version Impact: patch)
+/task auto  # (set Type: bugfix, Version Impact: patch)
 # Approve → auto runs through pipeline → PR ready
 
 # Release after multiple ships

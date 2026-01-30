@@ -1,16 +1,16 @@
 ---
-name: plan
-description: Plan new features, updates, or fixes. Creates detailed task documents in docs/task/*.md with full implementation context. Updates TASKS.md for tracking. Use when starting any new work.
+name: task
+description: Create task documents for new features, updates, or fixes. Creates detailed specs in docs/task/*.md with full implementation context. Updates TASKS.md for tracking. Use when starting any new work.
 model: opus
 ---
 
-# /plan - Task Planning Agent
+# /task - Task Planning Agent
 
 > **Model:** opus (complex planning requires advanced reasoning)
 
 ## When to Use
 
-Invoke `/plan` when:
+Invoke `/task` when:
 - Starting a new feature or enhancement
 - Planning a bug fix that requires multiple changes
 - User says "I want to add...", "Let's implement...", "Can we build..."
@@ -21,13 +21,13 @@ Invoke `/plan` when:
 
 | Command | Mode | Behavior |
 |---------|------|----------|
-| `/plan` | Manual | You control each step: implement → test → document → ship |
-| `/plan auto` | Automated | After plan approval, all steps run autonomously |
+| `/task` | Manual | You control each step: implement → test → document → ship |
+| `/task auto` | Automated | After task approval, all steps run autonomously |
 
 ### Auto Mode Workflow
 
 ```
-/plan auto → User approves plan
+/task auto → User approves task
     ↓
 /implement
     ↓
@@ -94,11 +94,7 @@ Before creating the task document:
 - Find reusable components/hooks
 - Note potential pitfalls
 
-**Invoke specialized skills if installed (MUST invoke if available):**
-- `/vercel-react-best-practices` - For React/Next.js optimization patterns
-- `/supabase-postgres-best-practices` - For database design and queries
-
-> **Important:** If these skills are installed, you MUST invoke them. They are only optional to *install* — once installed, they are required to use.
+> **Note:** Specialized skills (vercel-react-best-practices, supabase-postgres-best-practices) are invoked during `/implement`, not during task planning. This keeps planning focused on requirements and architecture.
 
 ### 3. Create Task Document
 
@@ -112,6 +108,66 @@ Before creating the task document:
 ### 4. Update TASKS.md
 
 Add the task to the "## Planned" section with link to task document.
+
+**If TASKS.md doesn't exist, create it first** with this structure:
+
+```markdown
+# Tasks
+
+Task tracking for the development workflow.
+
+---
+
+## Planned
+
+Tasks ready for `/implement`.
+
+| Task | Priority | Task Doc | Created |
+|------|----------|----------|---------|
+
+---
+
+## In Progress
+
+| Task | Started | Task Doc | Status |
+|------|---------|----------|--------|
+
+---
+
+## Testing
+
+Tasks being tested via `/test`.
+
+| Task | Task Doc | Test Report | Status |
+|------|----------|-------------|--------|
+
+---
+
+## Approved
+
+Tested and approved. Ready for `/document` then `/ship`.
+
+| Task | Task Doc | Feature Doc | Test Report | Approved |
+|------|----------|-------------|-------------|----------|
+
+---
+
+## Ready to Ship
+
+PRs created via `/ship`. **Items stay here until `/release` is run** (even after merge).
+
+| Task | Branch | PR | Merged | Task Doc |
+|------|--------|----|--------|----------|
+
+---
+
+## Shipped
+
+Released items. Only `/release` moves items here with version number.
+
+| Task | PR | Release | Shipped |
+|------|-----|---------|---------|
+```
 
 ---
 
@@ -224,14 +280,14 @@ After creating the task document, add an entry:
 
 ## Output Checklist
 
-Before completing `/plan`:
+Before completing `/task`:
 
 - [ ] Task document created in `docs/task/`
 - [ ] Document has all required sections filled
 - [ ] Implementation steps are clear and actionable
 - [ ] File paths verified to exist (for modifications)
 - [ ] Added to TASKS.md "## Planned" section
-- [ ] User understands the plan and approves
+- [ ] User understands the task and approves
 
 ---
 
@@ -250,20 +306,20 @@ To start implementation:
 ```
 
 ### Auto Mode
-When `/plan auto` was invoked and user approves the plan:
+When `/task auto` was invoked and user approves the task:
 
 1. Set `Automation: auto` in the task document
 2. Use Task tool to spawn `/implement {task-name}` with **model: opus**
 3. The implement skill will chain to subsequent skills automatically
 
 ```
-Plan approved! Starting automated pipeline...
+Task approved! Starting automated pipeline...
 Task: {task-name}
 
 Spawning /implement with opus model...
 ```
 
-**IMPORTANT:** In auto mode, after user approves the plan:
+**IMPORTANT:** In auto mode, after user approves the task:
 - Do NOT wait for user to invoke /implement
 - Use Task tool to spawn implement agent with model: opus
 - Example: `Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {task-name}" })`
@@ -271,13 +327,14 @@ Spawning /implement with opus model...
 
 ---
 
-## Recommended Plugins (Install Separately)
+## Related Skills
 
-These plugins must be installed separately. **Once installed, they MUST be invoked** — do not skip them:
+| Skill | When to Use |
+|-------|-------------|
+| `/implement` | After task is approved, to start coding |
+| `/test` | After implementation, to verify the feature |
+| `/document` | After tests pass, to create documentation |
+| `/ship` | After documentation, to create PR |
+| `/release` | After multiple items shipped, to create release |
 
-| Plugin | Install From | When to Invoke |
-|--------|--------------|----------------|
-| `vercel-react-best-practices` | [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) | React/Next.js projects |
-| `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) | Supabase/PostgreSQL projects |
-
-If installed, you MUST invoke with `/vercel-react-best-practices` or `/supabase-postgres-best-practices` during planning.
+**Note:** Specialized skills (vercel-react-best-practices, supabase-postgres-best-practices) are invoked during `/implement`, not during `/task`. Install them separately from their respective repos.
