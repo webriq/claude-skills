@@ -10,6 +10,36 @@ model: haiku
 
 ## Prerequisites
 
+### Playwright MCP Setup (One-Time)
+
+Interactive mode requires Playwright MCP. **No npm install needed** - Claude Code handles it automatically.
+
+**Setup Steps:**
+
+1. Create `.mcp.json` in your project root (not in `.claude/` or subdirectories):
+   ```json
+   {
+     "mcpServers": {
+       "playwright": {
+         "command": "npx",
+         "args": ["@playwright/mcp@latest"]
+       }
+     }
+   }
+   ```
+
+2. **Restart Claude Code** (required after adding/modifying `.mcp.json`)
+
+3. Verify MCP is active - you should see `mcp__playwright__browser_*` tools available
+
+**How it works:**
+- Claude Code reads `.mcp.json` on startup
+- The `npx` command auto-downloads the package (no manual install)
+- MCP server starts automatically and exposes browser control tools
+- Tools like `mcp__playwright__browser_navigate`, `mcp__playwright__browser_click` become available
+
+---
+
 ### Interactive Mode (Default)
 
 **Playwright MCP is REQUIRED for interactive mode.** Before running tests, verify that `mcp__playwright__browser_navigate` is available as a tool. If Playwright MCP tools are not available:
@@ -24,7 +54,7 @@ model: haiku
      "mcpServers": {
        "playwright": {
          "command": "npx",
-         "args": ["@anthropic-ai/mcp-playwright"]
+         "args": ["@playwright/mcp@latest"]
        }
      }
    }
