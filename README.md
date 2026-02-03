@@ -2,6 +2,8 @@
 
 > A structured skill-based development pipeline for consistent, high-quality feature delivery.
 
+**Version:** 1.4.0 | [Changelog](#)
+
 ## Installation
 
 ### Step 1: Install Workflow Plugin
@@ -161,21 +163,41 @@ mkdir -p docs/task docs/testing docs/features docs/guides docs/changelogs tests/
 ## Quick Start
 
 ```bash
+# Get help for any skill
+/task --help              # or -h
+/implement --help
+/test -v                  # Show version
+
 # Manual Mode - You control each step
-/task
-/implement {task-name}
-/test {task-name}
-/document {task-name}
-/ship {task-name}
+/task                     # Creates task #1 → docs/task/001-feature-name.md
+/implement 1              # Implement task #1 (or use full name: 001-feature-name)
+/test 1                   # Test task #1
+/document 1               # Document task #1
+/ship 1                   # Ship task #1
+
+# Multi-task Mode - Parallel implementation
+/implement -m 1 2 3       # Spawn parallel agents for tasks 1, 2, and 3
 
 # Auto Mode - Full automation after plan approval
 /task auto
 # → After you approve, runs: implement → test → document → ship automatically
 
 # Auto Mode - Skip planning, auto-chain from implement
-/implement auto {task-name}
+/implement auto 1
 # → Task doc must exist. Runs: implement → test → document → ship automatically
 ```
+
+### Task IDs
+
+Tasks are assigned simple numeric IDs (1, 2, 3...) for easy reference:
+
+```bash
+# These are equivalent:
+/implement 1
+/implement 001-auth-jwt
+```
+
+Task files are named with zero-padded IDs for sorting: `001-auth-jwt.md`, `002-fix-login.md`
 
 ---
 
@@ -238,17 +260,22 @@ This applies to both manual and auto mode. In auto mode, skills spawn the next a
 
 ## Skills Reference
 
+All skills support `--help` (`-h`) and `--version` (`-v`) flags.
+
 ### 1. `/task` - Task Planning
 
 **Purpose:** Discuss requirements and create detailed task documents.
 
-**When to use:**
-- Starting a new feature or enhancement
-- Planning a bug fix
-- User says "I want to add...", "Let's implement..."
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
+| `auto` | Enable automated pipeline |
 
 **Output:**
-- Task document in `docs/task/{task-name}.md`
+- Task ID (e.g., #1)
+- Task document in `docs/task/{ID}-{task-name}.md`
 - Entry in TASKS.md "Planned" section
 
 **Example:**
@@ -256,8 +283,9 @@ This applies to both manual and auto mode. In auto mode, skills spawn the next a
 User: I want to add dark mode to the app
 Claude: /task
 → Discusses requirements
-→ Creates docs/task/dark-mode.md
-→ Adds to TASKS.md
+→ Creates docs/task/001-dark-mode.md
+→ Adds to TASKS.md as #1
+→ Next: /implement 1
 ```
 
 ---
@@ -266,31 +294,30 @@ Claude: /task
 
 **Purpose:** Implement tasks following the task document.
 
-**When to use:**
-- Task exists in "Planned" section
-- Ready to start coding
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
+| `-m, --multi` | Multi-task parallel execution |
+| `auto` | Auto-chain: test → document → ship |
 
-**Input:** Task name from TASKS.md
+**Input:** Task ID (number) or task filename
 
 **Options:**
 | Command | Behavior |
 |---------|----------|
-| `/implement {task}` | Implement, then notify user to run `/test` |
-| `/implement auto {task}` | Implement, then auto-chain: test → document → ship |
-
-**Output:**
-- Working implementation
-- Task moved to "Testing" section
+| `/implement {ID}` | Implement single task |
+| `/implement auto {ID}` | Implement, then auto-chain |
+| `/implement -m {ID1} {ID2}` | Parallel agents for multiple tasks |
 
 **Example:**
 ```
-/implement dark-mode
-→ Reads task document
-→ Implements step by step
-→ Updates status to "Testing"
-
-/implement auto dark-mode
-→ Same as above, then auto-chains through test → document → ship
+/implement 1                    # Implement task #1
+/implement 001-dark-mode        # Using filename
+/implement auto 1               # With auto-chain
+/implement -m 1 2 3             # Parallel implementation
+→ Next: /test 1
 ```
 
 ---
@@ -299,28 +326,29 @@ Claude: /task
 
 **Purpose:** Test **web** implementations using Playwright.
 
-**When to use:**
-- Web implementation is complete
-- Task is in "Testing" status
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
+| `--ci` | CI mode: headless with scripts |
+| `--cleanup` | Delete scripts after (with --ci) |
+
+**Input:** Task ID (number) or task filename
 
 **Modes:**
 | Mode | Command | Test Scripts |
 |------|---------|--------------|
-| Interactive | `/test {task}` | Not created |
-| CI (default) | `/test --ci {task}` | Kept for regression |
-| CI + cleanup | `/test --ci --cleanup {task}` | Deleted after test |
-
-**Output:**
-- Test report in `docs/testing/{task-name}.md`
-- Test scripts in `tests/e2e/{task-name}/` (CI mode, unless `--cleanup`)
-- PASS → Ready for `/document`
-- FAIL → Returns to `/implement`
+| Interactive | `/test {ID}` | Not created |
+| CI (default) | `/test --ci {ID}` | Kept for regression |
+| CI + cleanup | `/test --ci --cleanup {ID}` | Deleted after test |
 
 **Example:**
 ```
-/test user-dashboard              → Interactive visual testing
-/test --ci auth-flow              → CI mode, scripts kept
-/test --ci --cleanup button-fix   → CI mode, scripts deleted
+/test 1                         # Interactive visual testing
+/test --ci 1                    # CI mode, scripts kept
+/test --ci --cleanup 1          # CI mode, scripts deleted
+→ Next: /document 1
 ```
 
 ---
@@ -329,21 +357,21 @@ Claude: /task
 
 **Purpose:** Update project documentation after approval.
 
-**When to use:**
-- Tests passed
-- User approved the implementation
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
 
-**Output:**
-- Feature doc in `docs/features/`
-- User guide in `docs/guides/`
-- Updated CLAUDE.md (if needed)
+**Input:** Task ID (number) or task filename
 
 **Example:**
 ```
-/document dark-mode
+/document 1
 → Creates/updates feature doc
 → Creates/updates user guide
 → Moves to "Approved" section
+→ Next: /ship 1
 ```
 
 ---
@@ -352,21 +380,26 @@ Claude: /task
 
 **Purpose:** Create PRs and prepare for deployment.
 
-**When to use:**
-- Documentation complete
-- Ready to deploy
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
+
+**Input:** Task ID (number) or task filename
 
 **Output:**
-- Git branch (if needed)
+- Git branch: `feature/{ID}-{task-name}`
 - Pull Request
 - Task in "Ready to Ship" section
 
 **Example:**
 ```
-/ship dark-mode
+/ship 1
 → Runs pre-deployment checks
+→ Creates branch: feature/1-dark-mode
 → Creates PR
-→ Updates TASKS.md
+→ Next: Merge PR, then /release
 ```
 
 ---
@@ -375,23 +408,20 @@ Claude: /task
 
 **Purpose:** Create versioned releases with consolidated changelogs.
 
-**When to use:**
-- Multiple features shipped
-- Ready to create a version release
-
-**Output:**
-- CHANGELOG.md entry
-- Git tag
-- GitHub Release
-- Items moved to "Shipped"
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `-h, --help` | Show usage and options |
+| `-v, --version` | Show workflow skills version |
+| `auto` | Auto-determine version from task types |
+| `patch/minor/major` | Force version bump type |
 
 **Example:**
 ```
-/release v1.2.0
-→ Gathers shipped items
-→ Categorizes by type
-→ Creates changelog entry
-→ Creates git tag + GitHub release
+/release                        # Auto-detect version
+/release minor                  # Force minor bump
+/release v1.2.0                 # Explicit version
+→ Creates changelog + git tag + GitHub release
 ```
 
 ---
@@ -400,9 +430,12 @@ Claude: /task
 
 When `/task` creates a task, it uses this structure:
 
+**Filename:** `docs/task/{ID}-{task-name}.md` (e.g., `001-dark-mode.md`)
+
 ```markdown
 # {Task Title}
 
+> **ID:** {number}
 > **Status:** PLANNED | TESTING | APPROVED | SHIPPED
 > **Priority:** HIGH | MEDIUM | LOW
 > **Type:** feature | bugfix | enhancement | documentation | chore
@@ -455,29 +488,31 @@ When `/task` creates a task, it uses this structure:
 
 The workflow uses these sections in TASKS.md. **The `/task` skill auto-creates this file if it doesn't exist.**
 
+All tables include an **ID** column for easy task reference.
+
 ```markdown
 ## Planned
-Tasks ready for `/implement`. Created via `/task`.
-| Task | Priority | Task Doc | Created |
+Tasks ready for `/implement {ID}`. Created via `/task`.
+| ID | Task | Priority | Task Doc | Created |
 
 ## In Progress
-| Task | Started | Task Doc | Status |
+| ID | Task | Started | Task Doc | Status |
 
 ## Testing
 Tasks being tested via `/test`. Returns to `/implement` if FAIL.
-| Task | Task Doc | Test Report | Status |
+| ID | Task | Task Doc | Test Report | Status |
 
 ## Approved
 Tested and approved. Ready for `/document` then `/ship`.
-| Task | Task Doc | Feature Doc | Test Report | Approved |
+| ID | Task | Task Doc | Feature Doc | Test Report | Approved |
 
 ## Ready to Ship
 PRs created via `/ship`. **Items stay here until `/release`** (even after merge).
-| Task | Branch | PR | Merged | Task Doc |
+| ID | Task | Branch | PR | Merged | Task Doc |
 
 ## Shipped
 Released items. Only `/release` moves items here with version.
-| Task | PR | Release | Shipped |
+| ID | Task | PR | Release | Shipped |
 ```
 
 ### Release Tracking Flow
@@ -703,16 +738,16 @@ npx skills add eljun/claude-skills -y -g
 
 ## File Locations
 
-| Content | Location |
-|---------|----------|
-| Task documents | `docs/task/*.md` |
-| Test reports | `docs/testing/*.md` |
-| E2E test scripts | `tests/e2e/*/` |
-| Feature docs | `docs/features/*.md` |
-| User guides | `docs/guides/*.md` |
-| Changelog | `docs/changelogs/CHANGELOG.md` |
-| Workflow tracker | `TASKS.md` |
-| Skills | `.claude/skills/*/SKILL.md` |
+| Content | Location | Example |
+|---------|----------|---------|
+| Task documents | `docs/task/{ID}-{name}.md` | `docs/task/001-auth-jwt.md` |
+| Test reports | `docs/testing/{ID}-{name}.md` | `docs/testing/001-auth-jwt.md` |
+| E2E test scripts | `tests/e2e/{ID}-{name}/` | `tests/e2e/001-auth-jwt/` |
+| Feature docs | `docs/features/*.md` | `docs/features/authentication.md` |
+| User guides | `docs/guides/*.md` | `docs/guides/authentication.md` |
+| Changelog | `docs/changelogs/CHANGELOG.md` | |
+| Workflow tracker | `TASKS.md` | |
+| Skills version | `plugins/workflow/VERSION` | `1.4.0` |
 
 ---
 
