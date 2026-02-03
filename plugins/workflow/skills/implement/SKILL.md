@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement tasks from docs/task/*.md. Reads the task document, follows implementation steps, and updates status in TASKS.md. Use "/implement auto {task}" to auto-chain through test → document → ship.
+description: Implement tasks from docs/task/*.md. Reads the task document, follows implementation steps, and updates status in TASKS.md. Use "/implement auto {task}" to auto-chain through test → document → ship. Use "/implement -m 1 2 3" for multi-task parallel execution.
 model: opus
 ---
 
@@ -10,31 +10,45 @@ model: opus
 
 ## When to Use
 
-Invoke `/implement {task-name}` when:
+Invoke `/implement {ID}` when:
 - A task document exists in `docs/task/`
 - Task is in "Planned" status in TASKS.md
 - Ready to start coding
 
-**Example:** `/implement dashboard-redesign`
+**Example:** `/implement 1` or `/implement 001-dashboard-redesign`
 
 ## Invocation Options
 
 | Command | Mode | Behavior |
 |---------|------|----------|
-| `/implement {task-name}` | Manual | Implement, then notify user to run `/test` |
-| `/implement auto {task-name}` | Automated | Implement, then auto-chain through test → document → ship |
+| `/implement {ID}` | Manual | Implement single task, then notify user to run `/test` |
+| `/implement auto {ID}` | Automated | Implement, then auto-chain through test → document → ship |
+| `/implement -m {ID1} {ID2} ...` | Multi-task | Spawn parallel agents for each task |
+| `/implement --multi {ID1} {ID2}` | Multi-task | Same as `-m` |
+| `/implement auto -m {ID1} {ID2}` | Multi + Auto | Parallel tasks with auto-chain |
+
+### Task ID Resolution
+
+The `{ID}` can be:
+- **Numeric ID:** `1`, `2`, `3` → Looks up in TASKS.md, finds matching task document
+- **Padded ID:** `001`, `002` → Same as numeric
+- **Full filename:** `001-dashboard-redesign` → Direct file reference
+
+**Resolution process:**
+1. If numeric → Read TASKS.md, find row with matching ID, get task doc path
+2. If filename → Look for `docs/task/{filename}.md` directly
 
 ### Auto Mode
 
 When invoked with `auto`, the implement skill:
 1. Sets `Automation: auto` in the task document (overrides any existing value)
 2. Implements the task as normal
-3. After completion, automatically spawns `/test {task-name}` (haiku)
+3. After completion, automatically spawns `/test {ID}` (haiku)
 4. The pipeline continues: test → document → ship
 
 This lets you skip `/task auto` and trigger the full pipeline from implement:
 ```
-/implement auto {task-name} → implement code
+/implement auto {ID} → implement code
     ↓
 /test (haiku)
     │
@@ -42,37 +56,94 @@ PASS → /document → /ship → PR + notify
 FAIL → /implement (with test report) → retry
 ```
 
+### Multi-Task Mode
+
+When invoked with `-m` or `--multi`, the implement skill spawns parallel agents:
+
+```
+/implement -m 1 2 3
+       │
+       ├── Validate all tasks exist in TASKS.md
+       ├── Check for file overlap warnings
+       │
+       └── Spawn in parallel (using Task tool):
+           ├── Agent-1: /implement 1
+           ├── Agent-2: /implement 2
+           └── Agent-3: /implement 3
+       │
+       └── Wait for all agents to complete
+       └── Report combined status
+```
+
+**Multi-task with auto mode:**
+```
+/implement auto -m 1 2 3
+```
+Each spawned agent runs with auto mode, chaining to test → document → ship.
+
+#### Pre-Flight Checks for Multi-Task
+
+Before spawning agents, check for potential conflicts:
+
+1. **Validate all tasks exist:**
+   ```
+   ✓ Task 1: 001-auth-jwt.md (found)
+   ✓ Task 2: 002-fix-portal.md (found)
+   ✗ Task 3: Not found in TASKS.md
+   ```
+
+2. **Check for file overlap:**
+   Read each task's "File Changes" section and warn if overlap:
+   ```
+   ⚠️ Warning: Tasks 1 and 2 both modify src/auth/middleware.ts
+
+   Options:
+   1. Continue anyway (may need manual conflict resolution)
+   2. Run sequentially: /implement 1, then /implement 2
+   3. Cancel and review task scopes
+   ```
+
+3. **Check dependencies:**
+   If Task 2 has `Blocked by: Task 1`, warn:
+   ```
+   ⚠️ Task 2 is blocked by Task 1
+   Recommendation: Run sequentially or resolve dependency first
+   ```
+
 ## Workflow
 
 ```
-/implement [auto] {task-name}
+/implement [auto] [-m] {ID} [{ID2} ...]
        ↓
-1. Parse arguments: detect "auto" flag
-2. Read docs/task/{task-name}.md
-3. If "auto" flag → set Automation: auto in task doc
-4. Check Automation field (manual | auto)
-5. Move task to "## In Progress" in TASKS.md
-6. ⚠️ MANDATORY: Invoke specialized skills (see Step 2 below)
+1. Parse arguments: detect "auto" flag, "-m/--multi" flag, task ID(s)
+2. If multi-task → Run pre-flight checks, spawn parallel agents, exit
+3. Resolve task ID → find docs/task/{ID}-{name}.md
+4. Read task document
+5. If "auto" flag → set Automation: auto in task doc
+6. Check Automation field (manual | auto)
+7. Move task to "## In Progress" in TASKS.md
+8. ⚠️ MANDATORY: Invoke specialized skills (see Step 2 below)
    └── /vercel-react-best-practices (if installed + React code)
    └── /supabase-postgres-best-practices (if installed + DB code)
-7. Implement following task document steps
-8. Update status to "TESTING" when complete
+9. Implement following task document steps
+10. Commit with [task-{ID}] prefix for traceability
+11. Update status to "TESTING" when complete
        ↓
 ┌─── Automation Mode? ───┐
 │                        │
 ▼ Manual                 ▼ Auto
-Notify user              Invoke /test {task-name}
+Notify user              Invoke /test {ID}
 Ready for /test
 ```
 
-**⚠️ GUARDRAIL:** Step 6 is NOT optional. If specialized skills are installed and relevant to the task, they MUST be invoked BEFORE writing any code. See "Step 2: Invoke Specialized Skills" below for details.
+**⚠️ GUARDRAIL:** Step 8 is NOT optional. If specialized skills are installed and relevant to the task, they MUST be invoked BEFORE writing any code. See "Step 2: Invoke Specialized Skills" below for details.
 
 ## Auto Mode Behavior
 
-When invoked with `/implement auto {task-name}` OR task document has `Automation: auto`:
+When invoked with `/implement auto {ID}` OR task document has `Automation: auto`:
 
 1. If invoked with `auto` argument, update the task document to set `Automation: auto`
-2. After implementation completes, automatically invoke `/test {task-name}`
+2. After implementation completes, automatically invoke `/test {ID}`
 
 ## Pre-Implementation Checklist
 
@@ -80,18 +151,41 @@ Before writing ANY code:
 
 ### 0. Parse Arguments
 
-Check if `auto` was passed in the invocation:
-- `/implement auto {task-name}` → Set `Automation: auto` in `docs/task/{task-name}.md`
-- `/implement {task-name}` → Leave automation field as-is (respect existing value)
+Check for flags and task ID(s):
+- `-m` or `--multi` → Multi-task mode (spawn parallel agents)
+- `auto` → Set automation mode
+- Remaining args → Task ID(s)
+
+**Examples:**
+- `/implement 1` → Single task, manual mode
+- `/implement auto 1` → Single task, auto mode
+- `/implement -m 1 2 3` → Multi-task, manual mode
+- `/implement auto -m 1 2` → Multi-task, auto mode
 
 If `auto` is detected, update the task document header:
 ```markdown
 > **Automation:** auto
 ```
 
-### 1. Read the Task Document (Primary Context Source)
+### 1. Resolve Task ID
+
+Convert the task ID to the task document path:
+
+1. Read TASKS.md
+2. Find the row with matching ID in the first column
+3. Get the task doc path from that row
+4. Verify the file exists in `docs/task/`
+
+**Example:**
 ```
-docs/task/{task-name}.md
+Input: /implement 1
+TASKS.md row: | 1 | Dashboard Redesign | HIGH | [001-dashboard-redesign.md](...) |
+Resolved: docs/task/001-dashboard-redesign.md
+```
+
+### 2. Read the Task Document (Primary Context Source)
+```
+docs/task/{ID}-{task-name}.md
 ```
 
 **IMPORTANT — Context Efficiency:**
@@ -105,16 +199,17 @@ The task document was created by the `/task` agent, which already performed a th
 If the task document references specific files, read only those files. This keeps your context window efficient and avoids redundant exploration.
 
 Understand:
+- Task ID (for commit messages)
 - Requirements (must have vs nice to have)
 - Proposed solution
 - File changes needed
 - Implementation steps
 
-### 2. Invoke Specialized Skills (MANDATORY - DO NOT SKIP)
+### 3. Invoke Specialized Skills (MANDATORY - DO NOT SKIP)
 
 **CRITICAL GUARDRAIL:** Before writing ANY code, you MUST check for and invoke specialized skills. This is NOT optional.
 
-#### Step 2a: Detect Installed Skills
+#### Step 3a: Detect Installed Skills
 
 Check if these skills are available by looking for them in the available skills/tools:
 
@@ -123,7 +218,7 @@ Check if these skills are available by looking for them in the available skills/
 | `/vercel-react-best-practices` | Skill is listed in available tools | ANY React/Next.js/TypeScript code |
 | `/supabase-postgres-best-practices` | Skill is listed in available tools | ANY database queries, RLS, schema, Supabase code |
 
-#### Step 2b: Invoke BEFORE Writing Code
+#### Step 3b: Invoke BEFORE Writing Code
 
 **If skill is detected → MUST invoke it FIRST, before writing any code.**
 
@@ -135,9 +230,9 @@ Check if these skills are available by looking for them in the available skills/
 /supabase-postgres-best-practices
 ```
 
-#### Step 2c: Verification Checklist
+#### Step 3c: Verification Checklist
 
-Before proceeding to Step 3, confirm:
+Before proceeding to Step 4, confirm:
 
 - [ ] Checked if `/vercel-react-best-practices` is available
 - [ ] If available AND task involves React/Next.js → Invoked it
@@ -163,25 +258,63 @@ Skipping specialized skills leads to:
 
 > **Why this matters:** These skills contain critical best practices from Vercel and Supabase engineers. Skipping them means writing code that may have performance issues, security vulnerabilities, or anti-patterns that will need to be fixed later.
 
-### 3. Update TASKS.md
+### 4. Update TASKS.md
 
 Move task from "Planned" to "In Progress":
 
 ```markdown
 ## In Progress
 
-| Task | Started | Task Doc | Status |
-|------|---------|----------|--------|
-| Quick Actions Redesign | Jan 25 | [link](docs/task/...) | Implementing |
+| ID | Task | Started | Task Doc | Status |
+|----|------|---------|----------|--------|
+| 1 | Quick Actions Redesign | Jan 25 | [001-quick-actions.md](docs/task/001-quick-actions.md) | Implementing |
 ```
 
-### 4. Verify Dependencies
+### 5. Verify Dependencies
 
 Check that all prerequisites exist:
 - Required API endpoints
 - Required types/interfaces
 - Required packages installed
 - No blocking tasks
+
+---
+
+## Commit Convention
+
+**IMPORTANT:** All commits must include the task ID prefix for traceability.
+
+### Format
+```
+[task-{ID}] {type}: {description}
+
+{optional body}
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+```
+
+### Examples
+```bash
+# Feature commit
+git commit -m "[task-1] feat: Add JWT authentication middleware
+
+Implements token validation and refresh logic.
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+
+# Fix commit
+git commit -m "[task-2] fix: Resolve portal login redirect issue
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
+### Why This Matters
+
+The `[task-{ID}]` prefix enables:
+1. **Traceability:** Easy to see which commits belong to which task
+2. **Multi-task support:** When multiple agents work in parallel, `/ship` can identify task-specific changes
+3. **Filtering:** `git log --grep="\[task-1\]"` shows all commits for task 1
+4. **PR generation:** `/ship` can create accurate PR descriptions
 
 ---
 
@@ -283,9 +416,9 @@ Move to "Testing" section:
 ```markdown
 ## Testing
 
-| Task | Task Doc | Test Report | Status |
-|------|----------|-------------|--------|
-| Quick Actions Redesign | [link](docs/task/...) | Pending | Ready for test |
+| ID | Task | Task Doc | Test Report | Status |
+|----|------|----------|-------------|--------|
+| 1 | Quick Actions Redesign | [001-quick-actions.md](docs/task/001-quick-actions.md) | Pending | Ready for test |
 ```
 
 ### 2. Update Task Document
@@ -326,19 +459,24 @@ Add completion notes:
 
 #### Manual Mode (or if Automation field is missing)
 ```
-Implementation complete for: {task-name}
+Implementation complete for: #{ID} - {Task Title}
 
 Files changed:
 - path/to/file1.tsx (created)
 - path/to/file2.tsx (modified)
 
-Ready for testing. Run:
-/test {task-name}
+Commits made:
+- [task-{ID}] feat: Add authentication middleware
+- [task-{ID}] feat: Add token refresh logic
+
+Next Steps:
+  /test {ID}              # e.g., /test 1
+  /test {ID}-{task-name}  # e.g., /test 001-auth-jwt
 ```
 
 #### Auto Mode
 ```
-Implementation complete for: {task-name}
+Implementation complete for: #{ID} - {Task Title}
 
 Files changed:
 - path/to/file1.tsx (created)
@@ -347,7 +485,27 @@ Files changed:
 [AUTO] Spawning /test with haiku model...
 ```
 Use Task tool to spawn test agent with **model: haiku**:
-`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/test {task-name}" })`
+`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/test {ID}" })`
+
+#### Multi-Task Completion
+
+When all parallel agents complete:
+```
+Multi-task implementation complete!
+
+Results:
+├── Task #1: ✓ Complete (3 commits)
+├── Task #2: ✓ Complete (2 commits)
+└── Task #3: ✗ Failed (blocked by missing API)
+
+Next Steps (for successful tasks):
+  /test 1                  # Test task #1
+  /test 2                  # Test task #2
+  /test 001-auth-jwt       # Using task name
+
+Failed task requires attention:
+  Task #3: See docs/task/003-feature-name.md for blocker details
+```
 
 ---
 

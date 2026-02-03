@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Deploy approved features to production. Creates PRs, runs pre-deployment checks, and updates TASKS.md. Use after /document completes.
+description: Deploy approved features to production. Creates PRs, runs pre-deployment checks, and updates TASKS.md. Use after /document completes. Supports task IDs for easier invocation.
 model: haiku
 ---
 
@@ -10,25 +10,33 @@ model: haiku
 
 ## When to Use
 
-Invoke `/ship {task-name}` when:
+Invoke `/ship {ID}` when:
 - Task is in "Approved" status in TASKS.md
 - Documentation is complete
 - Ready to deploy to production
 
-**Example:** `/ship dashboard-redesign`
+**Example:** `/ship 1` or `/ship 001-dashboard-redesign`
+
+## Task ID Resolution
+
+The `{ID}` can be:
+- **Numeric ID:** `1`, `2`, `3` → Looks up in TASKS.md, finds matching task document
+- **Padded ID:** `001`, `002` → Same as numeric
+- **Full filename:** `001-dashboard-redesign` → Direct file reference
 
 ## Workflow
 
 ```
-/ship {task-name}
+/ship {ID}
        ↓
-1. Verify task is approved
-2. Check Automation field (manual | auto)
-3. Move to "Ready to Ship" in TASKS.md
-4. Run pre-deployment checks
-5. Create/update branch
-6. Create Pull Request
-7. Update TASKS.md with PR link
+1. Resolve task ID → find task document
+2. Verify task is approved in TASKS.md
+3. Check Automation field (manual | auto)
+4. Move to "Ready to Ship" in TASKS.md
+5. Run pre-deployment checks
+6. Create/update branch (feature/{ID}-{task-name})
+7. Create Pull Request (with task ID reference)
+8. Update TASKS.md with PR link
        ↓
 After merge → Update "Merged" column (stay in "Ready to Ship")
        ↓
@@ -45,8 +53,8 @@ After PR is created, the automation pipeline completes:
 ```
 [AUTO] Pipeline complete!
 
-Task: {task-name}
-Branch: feature/{task-name}
+Task: #{ID} - {Task Title}
+Branch: feature/{ID}-{task-name}
 PR: #{number} - {link}
 
 Pre-deployment checks:
@@ -59,6 +67,24 @@ TASKS.md updated to "Ready to Ship"
 ```
 
 **Note:** In auto mode, we still create the PR and notify you - you decide when to merge. The automation does NOT auto-merge.
+
+## Multi-Task Commit Tracking
+
+When shipping a task that was implemented as part of multi-task execution, commits are tracked via the `[task-{ID}]` prefix:
+
+```bash
+# Find all commits for a specific task
+git log --oneline --grep="\[task-1\]"
+
+# Example output:
+# a1b2c3d [task-1] feat: Add JWT authentication middleware
+# e4f5g6h [task-1] feat: Add token refresh logic
+```
+
+This allows `/ship` to:
+1. Identify which changes belong to which task
+2. Generate accurate PR descriptions
+3. Reference specific commits in the PR body
 
 ## Pre-Deployment Checklist
 
@@ -108,9 +134,9 @@ Move task to "Ready to Ship":
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Merged | Task Doc |
-|------|--------|----|--------|----------|
-| Quick Actions Redesign | feature/quick-actions | Pending | No | [link](...) |
+| ID | Task | Branch | PR | Merged | Task Doc |
+|----|------|--------|----|--------|----------|
+| 1 | Quick Actions Redesign | feature/1-quick-actions | Pending | No | [001-quick-actions.md](...) |
 ```
 
 **Note:** The "Merged" column tracks merge status. Items stay here until `/release` is run.
@@ -121,35 +147,35 @@ Move task to "Ready to Ship":
 
 ### Branch Strategy
 
-Use descriptive branch names:
+Use task ID in branch names for clarity:
 ```
-feature/{task-name}     - New features
-fix/{task-name}         - Bug fixes
-enhance/{task-name}     - Enhancements
+feature/{ID}-{task-name}     - New features (e.g., feature/1-auth-jwt)
+fix/{ID}-{task-name}         - Bug fixes (e.g., fix/2-login-redirect)
+enhance/{ID}-{task-name}     - Enhancements (e.g., enhance/3-dashboard)
 ```
 
 ### If Branch Doesn't Exist
 
 ```bash
-git checkout -b feature/{task-name}
+git checkout -b feature/{ID}-{task-name}
 git add -A
-git commit -m "feat: {description}
+git commit -m "[task-{ID}] feat: {description}
 
 {Detailed description of changes}
 
-Task: docs/task/{task-name}.md
-Test: docs/testing/{task-name}.md
+Task: docs/task/{ID}-{task-name}.md
+Test: docs/testing/{ID}-{task-name}.md
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
-git push -u origin feature/{task-name}
+git push -u origin feature/{ID}-{task-name}
 ```
 
 ### If Branch Exists
 
 ```bash
-git checkout feature/{task-name}
+git checkout feature/{ID}-{task-name}
 git add -A
-git commit -m "feat: {description}
+git commit -m "[task-{ID}] feat: {description}
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 git push
@@ -162,15 +188,16 @@ git push
 Use GitHub CLI to create PR:
 
 ```bash
-gh pr create --title "{PR Title}" --body "$(cat <<'EOF'
+gh pr create --title "[Task #{ID}] {PR Title}" --body "$(cat <<'EOF'
 ## Summary
 
 {2-3 bullet points describing the changes}
 
 ## Task Documentation
 
-- **Task:** [docs/task/{task-name}.md](link)
-- **Test Report:** [docs/testing/{task-name}.md](link)
+- **Task ID:** #{ID}
+- **Task Doc:** [docs/task/{ID}-{task-name}.md](link)
+- **Test Report:** [docs/testing/{ID}-{task-name}.md](link)
 - **Feature Doc:** [docs/features/{feature}.md](link)
 
 ## Changes
@@ -178,6 +205,10 @@ gh pr create --title "{PR Title}" --body "$(cat <<'EOF'
 | File | Change |
 |------|--------|
 | `path/to/file` | Description |
+
+## Commits
+
+{List commits with [task-{ID}] prefix}
 
 ## Testing
 
@@ -235,9 +266,9 @@ After PR is created:
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Merged | Task Doc |
-|------|--------|----|--------|----------|
-| Quick Actions Redesign | feature/quick-actions | [#123](link) | No | [link](...) |
+| ID | Task | Branch | PR | Merged | Task Doc |
+|----|------|--------|----|--------|----------|
+| 1 | Quick Actions Redesign | feature/1-quick-actions | [#123](link) | No | [001-quick-actions.md](...) |
 ```
 
 ---
@@ -251,9 +282,9 @@ After PR is merged, **update the "Merged" column but keep in "Ready to Ship"**:
 ```markdown
 ## Ready to Ship
 
-| Task | Branch | PR | Merged | Task Doc |
-|------|--------|----|--------|----------|
-| Quick Actions Redesign | feature/quick-actions | [#123](link) | ✅ Jan 26 | [link](...) |
+| ID | Task | Branch | PR | Merged | Task Doc |
+|----|------|--------|----|--------|----------|
+| 1 | Quick Actions Redesign | feature/1-quick-actions | [#123](link) | ✅ Jan 26 | [001-quick-actions.md](...) |
 ```
 
 **IMPORTANT:** Do NOT move to "Shipped" yet. Items stay in "Ready to Ship" until `/release` is run. This allows `/release` to:
@@ -280,9 +311,9 @@ After one or more items are merged, run `/release` to:
 ```markdown
 ## Shipped
 
-| Task | PR | Release | Shipped |
-|------|-----|---------|---------|
-| Quick Actions Redesign | [#123](link) | v1.2.0 | Jan 26 |
+| ID | Task | PR | Release | Shipped |
+|----|------|-----|---------|---------|
+| 1 | Quick Actions Redesign | [#123](link) | v1.2.0 | Jan 26 |
 ```
 
 ---
@@ -339,9 +370,9 @@ If issues found in production:
 
 ### Manual Mode
 ```
-Deployment initiated for: {task-name}
+Deployment initiated for: #{ID} - {Task Title}
 
-Branch: feature/{task-name}
+Branch: feature/{ID}-{task-name}
 PR: #{number} - {link}
 
 Pre-deployment checks:
@@ -351,14 +382,16 @@ Pre-deployment checks:
 
 TASKS.md updated to "Ready to Ship"
 
-After merge, I'll update status to "Shipped"
+Next Steps:
+  1. Review and merge the PR
+  2. After merging, run /release to create versioned release
 ```
 
 ### Auto Mode
 ```
 [AUTO] Pipeline complete!
 
-Task: {task-name}
+Task: #{ID} - {Task Title}
 Automation: Full pipeline executed
 
 Summary:
@@ -368,7 +401,7 @@ Summary:
 ├── /document ✓ (docs updated)
 └── /ship ✓ (PR created)
 
-Branch: feature/{task-name}
+Branch: feature/{ID}-{task-name}
 PR: #{number} - {link}
 
 Pre-deployment checks:

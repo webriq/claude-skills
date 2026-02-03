@@ -52,11 +52,12 @@ User Request
      ↓
 1. Discuss & clarify requirements
 2. Research codebase for context
-3. Create docs/task/{task-name}.md
-4. Add to TASKS.md under "## Planned"
-5. User can /clear and start fresh
+3. Generate Task ID (next available number)
+4. Create docs/task/{ID}-{task-name}.md
+5. Add to TASKS.md under "## Planned" with ID
+6. User can /clear and start fresh
      ↓
-Ready for /implement
+Ready for /implement {ID}
 ```
 
 ## What This Skill Does
@@ -96,18 +97,36 @@ Before creating the task document:
 
 > **Note:** Specialized skills (vercel-react-best-practices, supabase-postgres-best-practices) are invoked during `/implement`, not during task planning. This keeps planning focused on requirements and architecture.
 
-### 3. Create Task Document
+### 3. Generate Task ID
 
-**Location:** `docs/task/{task-name}.md`
+Before creating the task document, generate the next available Task ID:
 
-**Naming:** Use kebab-case, descriptive names:
-- `user-dashboard-redesign.md`
-- `lead-auto-tagging.md`
-- `booking-calendar-view.md`
+1. Read TASKS.md to find all existing task IDs
+2. Find the highest ID number across all sections (Planned, In Progress, Testing, etc.)
+3. Assign next ID = highest + 1
+4. If no tasks exist, start with ID = 1
 
-### 4. Update TASKS.md
+**ID Format:** Simple integers (1, 2, 3, ...)
 
-Add the task to the "## Planned" section with link to task document.
+```bash
+# Example: If TASKS.md has tasks with IDs 1, 2, 5
+# Next ID = 6 (highest + 1)
+```
+
+### 4. Create Task Document
+
+**Location:** `docs/task/{ID}-{task-name}.md`
+
+**Naming:** Zero-padded ID prefix + kebab-case descriptive name:
+- `001-user-dashboard-redesign.md`
+- `002-lead-auto-tagging.md`
+- `003-booking-calendar-view.md`
+
+**ID Padding:** Use 3 digits (001, 002, ... 999) for consistent sorting.
+
+### 5. Update TASKS.md
+
+Add the task to the "## Planned" section with ID and link to task document.
 
 **If TASKS.md doesn't exist, create it first** with this structure:
 
@@ -120,17 +139,17 @@ Task tracking for the development workflow.
 
 ## Planned
 
-Tasks ready for `/implement`.
+Tasks ready for `/implement {ID}`.
 
-| Task | Priority | Task Doc | Created |
-|------|----------|----------|---------|
+| ID | Task | Priority | Task Doc | Created |
+|----|------|----------|----------|---------|
 
 ---
 
 ## In Progress
 
-| Task | Started | Task Doc | Status |
-|------|---------|----------|--------|
+| ID | Task | Started | Task Doc | Status |
+|----|------|---------|----------|--------|
 
 ---
 
@@ -138,8 +157,8 @@ Tasks ready for `/implement`.
 
 Tasks being tested via `/test`.
 
-| Task | Task Doc | Test Report | Status |
-|------|----------|-------------|--------|
+| ID | Task | Task Doc | Test Report | Status |
+|----|------|----------|-------------|--------|
 
 ---
 
@@ -147,8 +166,8 @@ Tasks being tested via `/test`.
 
 Tested and approved. Ready for `/document` then `/ship`.
 
-| Task | Task Doc | Feature Doc | Test Report | Approved |
-|------|----------|-------------|-------------|----------|
+| ID | Task | Task Doc | Feature Doc | Test Report | Approved |
+|----|------|----------|-------------|-------------|----------|
 
 ---
 
@@ -156,8 +175,8 @@ Tested and approved. Ready for `/document` then `/ship`.
 
 PRs created via `/ship`. **Items stay here until `/release` is run** (even after merge).
 
-| Task | Branch | PR | Merged | Task Doc |
-|------|--------|----|--------|----------|
+| ID | Task | Branch | PR | Merged | Task Doc |
+|----|------|--------|----|--------|----------|
 
 ---
 
@@ -165,19 +184,20 @@ PRs created via `/ship`. **Items stay here until `/release` is run** (even after
 
 Released items. Only `/release` moves items here with version number.
 
-| Task | PR | Release | Shipped |
-|------|-----|---------|---------|
+| ID | Task | PR | Release | Shipped |
+|----|------|-----|---------|---------|
 ```
 
 ---
 
 ## Task Document Template
 
-Create this structure in `docs/task/{task-name}.md`:
+Create this structure in `docs/task/{ID}-{task-name}.md`:
 
 ```markdown
 # {Task Title}
 
+> **ID:** {number}
 > **Status:** PLANNED
 > **Priority:** HIGH | MEDIUM | LOW
 > **Type:** feature | bugfix | enhancement | documentation | chore
@@ -266,14 +286,15 @@ Create this structure in `docs/task/{task-name}.md`:
 
 ## TASKS.md Integration
 
-After creating the task document, add an entry:
+After creating the task document, add an entry with the ID:
 
 ```markdown
 ## Planned
 
-| Task | Priority | Task Doc | Created |
-|------|----------|----------|---------|
-| Dashboard Redesign | HIGH | [dashboard-redesign.md](docs/task/dashboard-redesign.md) | Jan 25 |
+| ID | Task | Priority | Task Doc | Created |
+|----|------|----------|----------|---------|
+| 1 | Dashboard Redesign | HIGH | [001-dashboard-redesign.md](docs/task/001-dashboard-redesign.md) | Jan 25 |
+| 2 | Fix Login Bug | MEDIUM | [002-fix-login-bug.md](docs/task/002-fix-login-bug.md) | Jan 26 |
 ```
 
 ---
@@ -297,32 +318,35 @@ When planning is complete, inform the user:
 
 ### Manual Mode
 ```
-Task document created: docs/task/{task-name}.md
+Task created: #{ID} - {Task Title}
+Document: docs/task/{ID}-{task-name}.md
 Added to TASKS.md under "Planned"
 
-To start implementation:
-1. /clear (optional - start fresh session)
-2. /implement {task-name}
+Next Steps:
+  /implement {ID}              # e.g., /implement 1
+  /implement {ID}-{task-name}  # e.g., /implement 001-auth-jwt
+
+(Optional: /clear first to start fresh session)
 ```
 
 ### Auto Mode
 When `/task auto` was invoked and user approves the task:
 
 1. Set `Automation: auto` in the task document
-2. Use Task tool to spawn `/implement {task-name}` with **model: opus**
+2. Use Task tool to spawn `/implement {ID}` with **model: opus**
 3. The implement skill will chain to subsequent skills automatically
 
 ```
 Task approved! Starting automated pipeline...
-Task: {task-name}
+Task: #{ID} - {Task Title}
 
-Spawning /implement with opus model...
+Spawning /implement {ID} with opus model...
 ```
 
 **IMPORTANT:** In auto mode, after user approves the task:
 - Do NOT wait for user to invoke /implement
 - Use Task tool to spawn implement agent with model: opus
-- Example: `Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {task-name}" })`
+- Example: `Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {ID}" })`
 - The automation flag in the task doc controls subsequent chaining
 
 ---

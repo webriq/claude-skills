@@ -121,25 +121,34 @@ CI mode generates test scripts and runs them with `npx playwright test` - no MCP
 
 ## When to Use
 
-Invoke `/test {task-name}` when:
+Invoke `/test {ID}` when:
 - Task is in "Testing" status in TASKS.md
 - Implementation is complete from `/implement`
 - Ready to verify the feature works
 
+**Example:** `/test 1` or `/test 001-dashboard-redesign`
+
+### Task ID Resolution
+
+The `{ID}` can be:
+- **Numeric ID:** `1`, `2`, `3` → Looks up in TASKS.md, finds matching task document
+- **Padded ID:** `001`, `002` → Same as numeric
+- **Full filename:** `001-dashboard-redesign` → Direct file reference
+
 ### Syntax
 
 ```
-/test {task-name}                              → Interactive mode (default)
-/test --ci {task-name}                         → CI mode, keeps scripts (default)
-/test --ci --cleanup {task-name}               → CI mode, deletes scripts after test
-/test --ci {task-name} "instructions"          → CI mode with additional test instructions
+/test {ID}                              → Interactive mode (default)
+/test --ci {ID}                         → CI mode, keeps scripts (default)
+/test --ci --cleanup {ID}               → CI mode, deletes scripts after test
+/test --ci {ID} "instructions"          → CI mode with additional test instructions
 ```
 
 **Examples:**
-- `/test dashboard-redesign` - Interactive visual testing
-- `/test --ci auth-flow` - Headless CI testing, scripts kept for regression
-- `/test --ci --cleanup button-styling` - CI testing, scripts deleted (minor changes)
-- `/test --ci checkout "test empty cart and full cart"` - CI mode with specific scenarios
+- `/test 1` - Interactive visual testing
+- `/test --ci 2` - Headless CI testing, scripts kept for regression
+- `/test --ci --cleanup 3` - CI testing, scripts deleted (minor changes)
+- `/test --ci 4 "test empty cart and full cart"` - CI mode with specific scenarios
 
 ### Flag Reference
 
@@ -415,7 +424,7 @@ Use Task tool to spawn document agent with **model: haiku**:
 ```
 [AUTO] Tests PASSED. Spawning /document with haiku model...
 ```
-`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/document {task-name}" })`
+`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/document {ID}" })`
 
 ### On FAIL
 Use Task tool to spawn implement agent with **model: opus** (needs advanced reasoning to fix issues):
@@ -428,7 +437,7 @@ Issues found:
 
 Re-running implementation with fixes...
 ```
-`Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {task-name} - Fix issues from test report: {summary}" })`
+`Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {ID} - Fix issues from test report: {summary}" })`
 
 **Note:** The implement skill will receive the test report context and should focus on fixing the specific issues identified. After fixes, it will chain back to /test (with haiku).
 
@@ -441,7 +450,7 @@ Re-running implementation with fixes...
 ### 1. Read the Task Document (Primary Context Source)
 
 ```
-docs/task/{task-name}.md
+docs/task/{ID}-{task-name}.md
 ```
 
 **IMPORTANT — Context Efficiency:**
@@ -546,14 +555,15 @@ mcp__playwright__browser_resize({ width: 768, height: 1024 }) // iPad
 
 ## Test Report Template
 
-Create report in `docs/testing/{task-name}.md`:
+Create report in `docs/testing/{ID}-{task-name}.md`:
 
 ```markdown
 # Test Report: {Task Name}
 
+> **Task ID:** {ID}
 > **Status:** PASS | FAIL | PARTIAL
 > **Tested:** {Date}
-> **Task Doc:** [link](../task/{task-name}.md)
+> **Task Doc:** [link](../task/{ID}-{task-name}.md)
 
 ## Summary
 
@@ -652,9 +662,9 @@ Move to "Approved" section (pending user approval):
 ```markdown
 ## Testing
 
-| Task | Task Doc | Test Report | Status |
-|------|----------|-------------|--------|
-| Quick Actions Redesign | [link](...) | [report](docs/testing/...) | PASS - Awaiting approval |
+| ID | Task | Task Doc | Test Report | Status |
+|----|------|----------|-------------|--------|
+| 1 | Quick Actions Redesign | [001-quick-actions.md](...) | [001-quick-actions.md](docs/testing/001-quick-actions.md) | PASS - Awaiting approval |
 ```
 
 ### If FAIL
@@ -664,9 +674,9 @@ Keep in "Testing" with failure note:
 ```markdown
 ## Testing
 
-| Task | Task Doc | Test Report | Status |
-|------|----------|-------------|--------|
-| Quick Actions Redesign | [link](...) | [report](docs/testing/...) | FAIL - See report |
+| ID | Task | Task Doc | Test Report | Status |
+|----|------|----------|-------------|--------|
+| 1 | Quick Actions Redesign | [001-quick-actions.md](...) | [001-quick-actions.md](docs/testing/001-quick-actions.md) | FAIL - See report |
 ```
 
 ---
@@ -679,50 +689,56 @@ Keep in "Testing" with failure note:
 
 #### On PASS
 ```
-Testing complete: {task-name}
+Testing complete: #{ID} - {Task Title}
 
 Result: PASS
-Test Report: docs/testing/{task-name}.md
+Test Report: docs/testing/{ID}-{task-name}.md
 
 All requirements verified. Ready for your approval.
-Once approved, run: /document {task-name}
+
+Next Steps (after approval):
+  /document {ID}              # e.g., /document 1
+  /document {ID}-{task-name}  # e.g., /document 001-auth-jwt
 ```
 
 #### On FAIL
 ```
-Testing complete: {task-name}
+Testing complete: #{ID} - {Task Title}
 
 Result: FAIL
-Test Report: docs/testing/{task-name}.md
+Test Report: docs/testing/{ID}-{task-name}.md
 
 Issues found:
 1. {Issue summary 1}
 2. {Issue summary 2}
 
-To fix and re-test:
-1. /implement {task-name} (review test report for fixes)
-2. /test {task-name} (re-run tests)
+Next Steps (fix and re-test):
+  /implement {ID}             # e.g., /implement 1
+  /implement {ID}-{task-name} # e.g., /implement 001-auth-jwt
+
+Then re-run:
+  /test {ID}
 ```
 
 ### Auto Mode
 
 #### On PASS
 ```
-Testing complete: {task-name}
+Testing complete: #{ID} - {Task Title}
 
 Result: PASS
-Test Report: docs/testing/{task-name}.md
+Test Report: docs/testing/{ID}-{task-name}.md
 
 [AUTO] Spawning /document with haiku model...
 ```
-Use Task tool: `Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/document {task-name}" })`
+Use Task tool: `Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/document {ID}" })`
 
 #### On FAIL
 ```
-Testing complete: {task-name}
+Testing complete: #{ID} - {Task Title}
 
 Result: FAIL
-Test Report: docs/testing/{task-name}.md
+Test Report: docs/testing/{ID}-{task-name}.md
 
 Issues found:
 1. {Issue summary 1}
@@ -730,7 +746,7 @@ Issues found:
 
 [AUTO] Spawning /implement with opus model for fixes...
 ```
-Use Task tool: `Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {task-name} - Fix: {issue summaries}" })`
+Use Task tool: `Task({ subagent_type: "general-purpose", model: "opus", prompt: "/implement {ID} - Fix: {issue summaries}" })`
 
 ---
 

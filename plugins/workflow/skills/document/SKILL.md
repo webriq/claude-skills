@@ -1,6 +1,6 @@
 ---
 name: document
-description: Update project documentation after feature approval. Creates/updates feature docs and user guides. Use after /test passes and user approves.
+description: Update project documentation after feature approval. Creates/updates feature docs and user guides. Use after /test passes and user approves. Supports task IDs for easier invocation.
 model: haiku
 ---
 
@@ -10,30 +10,38 @@ model: haiku
 
 ## When to Use
 
-Invoke `/document {task-name}` when:
+Invoke `/document {ID}` when:
 - Task has passed testing (`/test` returned PASS)
 - User has approved the implementation
 - Ready to update project documentation
 
-**Example:** `/document dashboard-redesign`
+**Example:** `/document 1` or `/document 001-dashboard-redesign`
+
+## Task ID Resolution
+
+The `{ID}` can be:
+- **Numeric ID:** `1`, `2`, `3` → Looks up in TASKS.md, finds matching task document
+- **Padded ID:** `001`, `002` → Same as numeric
+- **Full filename:** `001-dashboard-redesign` → Direct file reference
 
 ## Workflow
 
 ```
-/document {task-name}
+/document {ID}
        ↓
-1. Read task document for context
-2. Check Automation field (manual | auto)
-3. Read test report for verification
-4. Update/create feature documentation
-5. Update/create user guide (if user-facing)
-6. Update CLAUDE.md files if needed
-7. Move task to "Approved" in TASKS.md
+1. Resolve task ID → find task document
+2. Read task document for context
+3. Check Automation field (manual | auto)
+4. Read test report for verification
+5. Update/create feature documentation
+6. Update/create user guide (if user-facing)
+7. Update CLAUDE.md files if needed
+8. Move task to "Approved" in TASKS.md
        ↓
 ┌─── Automation Mode? ───┐
 │                        │
 ▼ Manual                 ▼ Auto
-Notify user              Invoke /ship {task-name}
+Notify user              Invoke /ship {ID}
 Ready for /ship
 ```
 
@@ -43,7 +51,7 @@ When task document has `Automation: auto`:
 
 After documentation is complete, use Task tool to spawn ship agent with **model: haiku**:
 ```
-Documentation complete: {task-name}
+Documentation complete: #{ID} - {Task Title}
 
 Updated files:
 - docs/features/{feature}.md
@@ -51,7 +59,7 @@ Updated files:
 
 [AUTO] Spawning /ship with haiku model...
 ```
-`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/ship {task-name}" })`
+`Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/ship {ID}" })`
 
 ## Pre-Documentation Checklist
 
@@ -59,8 +67,8 @@ Updated files:
 
 Read these files — they contain all the context you need:
 ```
-docs/task/{task-name}.md        - Implementation details
-docs/testing/{task-name}.md     - Test results & verification
+docs/task/{ID}-{task-name}.md        - Implementation details
+docs/testing/{ID}-{task-name}.md     - Test results & verification
 ```
 
 **IMPORTANT — Context Efficiency:**
@@ -269,9 +277,9 @@ Move task to "Approved" section:
 ```markdown
 ## Approved
 
-| Task | Task Doc | Feature Doc | Test Report | Approved |
-|------|----------|-------------|-------------|----------|
-| Quick Actions Redesign | [task](docs/task/...) | [feature](docs/features/...) | [test](docs/testing/...) | Jan 25 |
+| ID | Task | Task Doc | Feature Doc | Test Report | Approved |
+|----|------|----------|-------------|-------------|----------|
+| 1 | Quick Actions Redesign | [001-quick-actions.md](docs/task/001-quick-actions.md) | [feature](docs/features/...) | [001-quick-actions.md](docs/testing/001-quick-actions.md) | Jan 25 |
 ```
 
 ---
@@ -301,7 +309,7 @@ Move task to "Approved" section:
 
 ### Manual Mode
 ```
-Documentation updated for: {task-name}
+Documentation updated for: #{ID} - {Task Title}
 
 Updated files:
 - docs/features/{feature}.md (created/updated)
@@ -310,12 +318,14 @@ Updated files:
 
 Task moved to "Approved" in TASKS.md
 
-Ready to ship. Run: /ship {task-name}
+Next Steps:
+  /ship {ID}              # e.g., /ship 1
+  /ship {ID}-{task-name}  # e.g., /ship 001-auth-jwt
 ```
 
 ### Auto Mode
 ```
-Documentation updated for: {task-name}
+Documentation updated for: #{ID} - {Task Title}
 
 Updated files:
 - docs/features/{feature}.md (created/updated)
@@ -326,7 +336,7 @@ Task moved to "Approved" in TASKS.md
 
 [AUTO] Spawning /ship with haiku model...
 ```
-Use Task tool: `Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/ship {task-name}" })`
+Use Task tool: `Task({ subagent_type: "general-purpose", model: "haiku", prompt: "/ship {ID}" })`
 
 ---
 

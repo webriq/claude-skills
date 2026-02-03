@@ -1,7 +1,7 @@
 # Task Tracker
 
-**Version**: v1.0.0
-**Updated**: January 26, 2026
+**Version**: v1.1.0
+**Updated**: February 3, 2026
 
 ---
 
@@ -13,30 +13,32 @@
 
 | Status | Meaning |
 |--------|---------|
-| PLANNED | Ready for `/implement` |
+| PLANNED | Ready for `/implement {ID}` |
 | IN_PROGRESS | Being implemented |
 | TESTING | Being tested via `/test` |
 | APPROVED | Ready for `/ship` |
 | READY_TO_SHIP | PR created, awaiting merge |
 | SHIPPED | Merged and released |
 
+**Task IDs:** Use simple numbers (1, 2, 3) to reference tasks. Example: `/implement 1`
+
 ---
 
 ## In Progress
 
-| Task | Priority | Started | Task Doc |
-|------|----------|---------|----------|
-| - | - | - | - |
+| ID | Task | Priority | Started | Task Doc |
+|----|------|----------|---------|----------|
+| - | - | - | - | - |
 
 ---
 
 ## Planned
 
-Tasks ready for `/implement`. Created via `/task`.
+Tasks ready for `/implement {ID}`. Created via `/task`.
 
-| Task | Priority | Type | Task Doc | Created |
-|------|----------|------|----------|---------|
-| - | - | - | - | - |
+| ID | Task | Priority | Type | Task Doc | Created |
+|----|------|----------|------|----------|---------|
+| - | - | - | - | - | - |
 
 ---
 
@@ -44,9 +46,9 @@ Tasks ready for `/implement`. Created via `/task`.
 
 Tasks being tested via `/test`. Returns to `/implement` if FAIL.
 
-| Task | Type | Task Doc | Test Report | Status |
-|------|------|----------|-------------|--------|
-| - | - | - | - | - |
+| ID | Task | Type | Task Doc | Test Report | Status |
+|----|------|------|----------|-------------|--------|
+| - | - | - | - | - | - |
 
 ---
 
@@ -54,9 +56,9 @@ Tasks being tested via `/test`. Returns to `/implement` if FAIL.
 
 Tested and approved. Ready for `/ship`.
 
-| Task | Type | Task Doc | Feature Doc | Test Report | Approved |
-|------|------|----------|-------------|-------------|----------|
-| - | - | - | - | - | - |
+| ID | Task | Type | Task Doc | Feature Doc | Test Report | Approved |
+|----|------|------|----------|-------------|-------------|----------|
+| - | - | - | - | - | - | - |
 
 ---
 
@@ -64,17 +66,17 @@ Tested and approved. Ready for `/ship`.
 
 PRs created via `/ship`. Awaiting merge.
 
-| Task | Type | Branch | PR | Task Doc |
-|------|------|--------|-----|----------|
-| - | - | - | - | - |
+| ID | Task | Type | Branch | PR | Merged | Task Doc |
+|----|------|------|--------|-----|--------|----------|
+| - | - | - | - | - | - | - |
 
 ---
 
 ## Completed
 
-| Task | Type | Shipped | Doc |
-|------|------|---------|-----|
-| - | - | - | - |
+| ID | Task | Type | Shipped | Doc |
+|----|------|------|---------|-----|
+| - | - | - | - | - |
 
 ---
 
