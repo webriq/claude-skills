@@ -132,32 +132,118 @@ Each spawned agent runs with auto mode, chaining to test → document → ship.
 
 #### Pre-Flight Checks for Multi-Task
 
-Before spawning agents, check for potential conflicts:
+**CRITICAL:** Background agents cannot prompt for permissions interactively. You MUST complete all checks and get user approval BEFORE spawning agents.
 
-1. **Validate all tasks exist:**
-   ```
-   ✓ Task 1: 001-auth-jwt.md (found)
-   ✓ Task 2: 002-fix-portal.md (found)
-   ✗ Task 3: Not found in TASKS.md
-   ```
+##### Step 1: Validate Tasks Exist
+```
+✓ Task 1: 001-auth-jwt.md (found)
+✓ Task 2: 002-fix-portal.md (found)
+✗ Task 3: Not found in TASKS.md → STOP if any missing
+```
 
-2. **Check for file overlap:**
-   Read each task's "File Changes" section and warn if overlap:
-   ```
-   ⚠️ Warning: Tasks 1 and 2 both modify src/auth/middleware.ts
+##### Step 2: Check for File Overlap
+Read each task's "File Changes" section:
+```
+⚠️ Warning: Tasks 1 and 2 both modify src/auth/middleware.ts
 
-   Options:
-   1. Continue anyway (may need manual conflict resolution)
-   2. Run sequentially: /implement 1, then /implement 2
-   3. Cancel and review task scopes
-   ```
+Options:
+1. Continue anyway (may need manual conflict resolution)
+2. Run sequentially instead
+3. Cancel
+```
 
-3. **Check dependencies:**
-   If Task 2 has `Blocked by: Task 1`, warn:
-   ```
-   ⚠️ Task 2 is blocked by Task 1
-   Recommendation: Run sequentially or resolve dependency first
-   ```
+##### Step 3: Check Dependencies
+```
+⚠️ Task 2 is blocked by Task 1
+Recommendation: Run sequentially or resolve dependency first
+```
+
+##### Step 4: Scan for Dangerous Operations
+
+Read each task document and scan for these keywords:
+
+| Keywords Found | Risk Level | Action |
+|----------------|------------|--------|
+| `migration`, `schema`, `ALTER TABLE`, `prisma migrate` | ⚠️ Database | Require explicit approval |
+| `rm `, `delete file`, `remove`, `unlink` | 🚫 Deletion | Block - user must do manually |
+| `DROP`, `TRUNCATE`, `DELETE FROM` (without WHERE) | 🚫 Data loss | Block - user must do manually |
+| `--force`, `reset --hard`, `-rf` | 🚫 Destructive | Block |
+| `API_KEY`, `SECRET`, `password`, `credential` | ⚠️ Sensitive | Warn user |
+| `sudo`, `chmod 777`, `chown` | 🚫 System | Block |
+
+##### Step 5: Permission Approval (REQUIRED)
+
+**Display this prompt and WAIT for user confirmation:**
+
+```
+═══════════════════════════════════════════════════════════════
+MULTI-TASK PERMISSION CHECK
+═══════════════════════════════════════════════════════════════
+
+Tasks to implement in parallel:
+  #1 {Task 1 name}
+  #2 {Task 2 name}
+  #3 {Task 3 name}
+
+PERMISSIONS FOR BACKGROUND AGENTS
+───────────────────────────────────────────────────────────────
+✅ GRANTED (safe operations):
+   • Read, Edit, Write files
+   • Glob, Grep (search)
+   • Git: add, commit, status, diff, checkout -b, log
+   • npm/npx: install, run, build, test, lint
+
+⚠️ REQUIRES APPROVAL (detected in tasks):
+   • {e.g., "Database migration in Task #2"}
+   • {e.g., "Schema changes in Task #1"}
+   • (None detected)
+
+🚫 BLOCKED (agents will stop if needed):
+   • File deletion (rm, unlink, rimraf)
+   • Destructive git (push --force, reset --hard, clean -f)
+   • Database destruction (DROP, TRUNCATE)
+   • System commands (sudo, chmod)
+
+───────────────────────────────────────────────────────────────
+If agents encounter blocked operations, they will STOP and
+report back. You can then perform those manually.
+═══════════════════════════════════════════════════════════════
+
+Approve and start parallel implementation? (yes/no)
+```
+
+**DO NOT spawn agents until user types "yes" or confirms.**
+
+##### Step 6: Spawn Agents with Pre-Authorized Tools
+
+Only after user approval, spawn agents with these allowed tools:
+
+```
+Task({
+  subagent_type: "general-purpose",
+  model: "opus",
+  prompt: "/implement {ID}",
+  run_in_background: true,
+  allowed_tools: [
+    "Read",
+    "Edit",
+    "Write",
+    "Glob",
+    "Grep",
+    "Bash(git add *)",
+    "Bash(git commit *)",
+    "Bash(git status)",
+    "Bash(git diff *)",
+    "Bash(git checkout -b *)",
+    "Bash(git log *)",
+    "Bash(npm install *)",
+    "Bash(npm run *)",
+    "Bash(npx *)"
+  ]
+})
+```
+
+**Note:** Dangerous operations are NOT in allowed_tools, so agents physically cannot perform them.
 
 ## Workflow
 
