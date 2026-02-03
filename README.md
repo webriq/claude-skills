@@ -2,7 +2,7 @@
 
 > A structured skill-based development pipeline for consistent, high-quality feature delivery.
 
-**Version:** 1.4.0 | [Changelog](#)
+**Version:** 1.4.1 | [Changelog](#)
 
 ## Installation
 
@@ -747,7 +747,7 @@ npx skills add eljun/claude-skills -y -g
 | User guides | `docs/guides/*.md` | `docs/guides/authentication.md` |
 | Changelog | `docs/changelogs/CHANGELOG.md` | |
 | Workflow tracker | `TASKS.md` | |
-| Skills version | `plugins/workflow/VERSION` | `1.4.0` |
+| Skills version | `plugins/workflow/VERSION` | `1.4.1` |
 
 ---
 
